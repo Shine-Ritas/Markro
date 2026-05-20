@@ -49,8 +49,15 @@ prisma/        Database schema
 middleware.ts  Request middleware
 ```
 
+## Design reference
+
+UI mockups and tokens: [`.cursor/design-reference/README.md`](.cursor/design-reference/README.md)
+
+- `dashboard.png` — sidebar, KPIs, quick actions
+- `event-form.png` — event form sections (Phase 4)
+
 ## Implementation phases
 
 See [`.cursor/planning/plan.md`](.cursor/planning/plan.md) for the full phase-by-phase plan.
 
-**Current:** Phase 1 complete · **Next:** Phase 2 (database, multi-tenant, Google OAuth)
+**Current:** Phase 2 complete · Design reference applied · **Next:** Phase 3 (polish dashboard shell)

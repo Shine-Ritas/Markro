@@ -19,11 +19,11 @@
 
 ## Current phase
 
-| Field            | Value                                                                     |
-| ---------------- | ------------------------------------------------------------------------- |
-| **Active phase** | Phase 1 complete → start Phase 2                                          |
-| **Last updated** | 2026-05-20                                                                |
-| **Next action**  | `Implement Phase 2 from @.cursor/planning/plan.md — include Google OAuth` |
+| Field            | Value                                              |
+| ---------------- | -------------------------------------------------- |
+| **Active phase** | Design reference applied → start Phase 3           |
+| **Last updated** | 2026-05-20                                         |
+| **Next action**  | `Implement Phase 3 from @.cursor/planning/plan.md` |
 
 ---
 
@@ -33,13 +33,14 @@
 
 ### App
 
-| Variable             | Purpose                    | Phase |
-| -------------------- | -------------------------- | ----- |
-| `DATABASE_URL`       | PostgreSQL connection      | 2     |
-| `AUTH_SECRET`        | Auth.js session encryption | 2     |
-| `AUTH_URL`           | Canonical app URL          | 2     |
-| `AUTH_GOOGLE_ID`     | Google OAuth client ID     | 2     |
-| `AUTH_GOOGLE_SECRET` | Google OAuth client secret | 2     |
+| Variable                          | Purpose                                    | Phase |
+| --------------------------------- | ------------------------------------------ | ----- |
+| `DATABASE_URL`                    | PostgreSQL connection                      | 2     |
+| `AUTH_SECRET`                     | Auth.js session encryption                 | 2     |
+| `AUTH_URL`                        | Canonical app URL                          | 2     |
+| `AUTH_GOOGLE_ID`                  | Google OAuth client ID                     | 2     |
+| `AUTH_GOOGLE_SECRET`              | Google OAuth client secret                 | 2     |
+| `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED` | Set `true` when Google OAuth is configured | 2     |
 
 ### Google OAuth setup (Phase 2)
 
@@ -47,7 +48,10 @@
 2. Create **OAuth 2.0 Client ID** (Web application)
 3. **Authorized JavaScript origins:** `http://localhost:3000` (dev)
 4. **Authorized redirect URIs:** `http://localhost:3000/api/auth/callback/google`
-5. Production: repeat with production domain (Phase 15)
+5. Set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` in `.env` after adding credentials
+6. Production: repeat with production domain (Phase 15)
+
+**Verified redirect URI (dev):** `http://localhost:3000/api/auth/callback/google`
 
 ### Local services
 
@@ -56,19 +60,24 @@
 | Next.js dev   | `http://localhost:3000` | `npm run dev`                                  |
 | PostgreSQL    | `localhost:5432`        | `npm run docker:up` — user/pass/db: `luckdraw` |
 | Design system | `/design-system`        | UI primitive showcase                          |
+| Login         | `/login`                | Email + Google OAuth                           |
+| Dashboard     | `/dashboard`            | Protected; tenant + RBAC context               |
 
 ---
 
 ## Architecture decisions
 
-| Date       | Decision                               | Rationale                                                                                        |
-| ---------- | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 2026-05-20 | Auth.js v5 for email + Google          | Single session model, Prisma adapter, OAuth account linking                                      |
-| 2026-05-20 | Google OAuth in Phase 2                | Social login required early; same phase as credentials                                           |
-| 2026-05-20 | No payment gateways until future phase | Per product scope                                                                                |
-| 2026-05-20 | Prisma 6.x (not 7)                     | Prisma 7 requires `prisma.config.ts`; v6 matches standard Next.js tutorials until Phase 2 schema |
-| 2026-05-20 | shadcn base-nova + Base UI             | Dialog/Sheet/Dropdown use `@base-ui/react` render prop API                                       |
-| 2026-05-20 | Violet primary accent                  | Brand color in `app/globals.css` oklch hue ~285                                                  |
+| Date       | Decision                                        | Rationale                                                                                        |
+| ---------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 2026-05-20 | Auth.js v5 for email + Google                   | Single session model, Prisma adapter, OAuth account linking                                      |
+| 2026-05-20 | Google OAuth in Phase 2                         | Social login required early; same phase as credentials                                           |
+| 2026-05-20 | No payment gateways until future phase          | Per product scope                                                                                |
+| 2026-05-20 | Prisma 6.x (not 7)                              | Prisma 7 requires `prisma.config.ts`; v6 matches standard Next.js tutorials until Phase 2 schema |
+| 2026-05-20 | shadcn base-nova + Base UI                      | Dialog/Sheet/Dropdown use `@base-ui/react` render prop API                                       |
+| 2026-05-20 | Violet primary accent                           | Brand color in `app/globals.css` oklch hue ~285                                                  |
+| 2026-05-20 | JWT sessions + Prisma adapter                   | Credentials provider requires JWT; adapter stores OAuth accounts                                 |
+| 2026-05-20 | `allowDangerousEmailAccountLinking`             | Links Google to existing email/password users                                                    |
+| 2026-05-20 | Design reference in `.cursor/design-reference/` | Single source for UI mockups; dark LuckyDraw Pro theme applied before Phase 3                    |
 
 ---
 
@@ -99,17 +108,11 @@
 
 **Completed:**
 
--
+- **Not done / deferred:**
 
-**Not done / deferred:**
+- **Files touched (high level):**
 
--
-
-**Files touched (high level):**
-
--
-
-**How to verify:**
+- **How to verify:**
 
 1.
 
@@ -117,6 +120,57 @@
 
 -
 ```
+
+---
+
+#### Design reference + theme — 2026-05-20
+
+**Completed:**
+
+- Moved mockups to `.cursor/design-reference/` (`dashboard.png`, `event-form.png`) — not duplicated
+- `README.md` design tokens + layout spec
+- Dark LuckyDraw Pro theme in `globals.css`
+- Dashboard shell: sidebar, KPI cards, quick actions, empty states (matches `dashboard.png`)
+
+**Notes for Phase 3:**
+
+- Read `@.cursor/design-reference/README.md` before UI work
+- Event form UI should follow `event-form.png` in Phase 4
+
+---
+
+#### Phase 2 — 2026-05-20
+
+**Completed:**
+
+- Full Prisma schema (tenants, users, roles, permissions, staff, plans, subscriptions, audit_logs, Auth.js tables)
+- Migration `20260520114453_init_phase2`
+- Auth.js v5: Credentials + Google OAuth, JWT sessions, Prisma adapter
+- Login, register, forgot/reset password, protected dashboard
+- Multi-tenant middleware (`x-tenant-id` header), `lib/tenant.ts`, `lib/rbac.ts`
+- Seed: plans (free/pro/enterprise), super admin, demo org
+
+**Seeded credentials:**
+
+- Super Admin: `superadmin@luckdraw.app` / `SuperAdmin123!`
+- Demo: `demo@demo.com` / `Demo1234!` (tenant: `demo-org`)
+
+**Not done / deferred:**
+
+- Email delivery for password reset (dev shows reset URL in API response)
+- Full settings UI for OAuth account linking → Phase 3
+
+**How to verify:**
+
+1. `npm run docker:up && npm run db:seed`
+2. Set `AUTH_SECRET` via `openssl rand -base64 32` in `.env`
+3. `npm run dev` → login with demo credentials → `/dashboard`
+4. For Google: add OAuth credentials + `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`
+
+**Notes for next agent:**
+
+- Phase 3: build sidebar layout; reuse session `tenantId` / `permissions`
+- Super admin has no staff row but `isSuperAdmin` + `permissions: ["*"]`
 
 ---
 
@@ -188,5 +242,5 @@
 _Free-form notes during development — clear when phase ships._
 
 ```
-Phase 1 shipped. Package name: luckdraw
+Phase 2 shipped. Run db:seed before first login.
 ```

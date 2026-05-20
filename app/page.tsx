@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -29,16 +29,16 @@ export default function Home() {
         <section className="space-y-4">
           <p className="text-sm font-medium text-primary">Phase 1 · Foundation</p>
           <h1 className="max-w-2xl font-heading text-4xl font-bold tracking-tight sm:text-5xl">
-            Enterprise lucky draw & raffle management
+            {APP_NAME} — enterprise lucky draw & raffle management
           </h1>
           <p className="max-w-xl text-lg text-muted-foreground">{APP_DESCRIPTION}</p>
           <div className="flex flex-wrap gap-3 pt-2">
             <Link href="/design-system" className={cn(buttonVariants())}>
               View design system
             </Link>
-            <Button variant="outline" disabled>
-              Dashboard (Phase 3)
-            </Button>
+            <Link href="/login" className={cn(buttonVariants({ variant: "outline" }))}>
+              Sign in
+            </Link>
           </div>
         </section>
 

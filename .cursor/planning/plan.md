@@ -43,7 +43,7 @@ Build a modern **multi-tenant** Lucky Draw SaaS for organizations running raffle
 | Phase | Name                           | Status            |
 | ----- | ------------------------------ | ----------------- |
 | 1     | Project foundation             | `[x]` Done        |
-| 2     | Database & multi-tenant + auth | `[ ]` Not started |
+| 2     | Database & multi-tenant + auth | `[x]` Done        |
 | 3     | Dashboard & layout             | `[ ]` Not started |
 | 4     | Event management               | `[ ]` Not started |
 | 5     | Ticket management              | `[ ]` Not started |
@@ -186,59 +186,59 @@ Running Next.js project, reusable UI, base architecture.
 
 ### Checklist — database
 
-- [ ] Configure local PostgreSQL
-- [ ] Prisma migrations + client
-- [ ] UUID PKs, `created_at`, `updated_at`, `deleted_at`
-- [ ] Tenant isolation indexes
+- [x] Configure local PostgreSQL
+- [x] Prisma migrations + client
+- [x] UUID PKs, `created_at`, `updated_at`, `deleted_at`
+- [x] Tenant isolation indexes
 
 ### Checklist — core tables
 
-- [ ] `tenants`
-- [ ] `users`
-- [ ] `roles`, `permissions`
-- [ ] `staff`
-- [ ] `subscriptions`, `plans`
-- [ ] `audit_logs`
-- [ ] Auth.js tables: `accounts`, `sessions`, `verification_tokens`
+- [x] `tenants`
+- [x] `users`
+- [x] `roles`, `permissions`
+- [x] `staff`
+- [x] `subscriptions`, `plans`
+- [x] `audit_logs`
+- [x] Auth.js tables: `accounts`, `sessions`, `verification_tokens`
 
 ### Checklist — multi-tenant
 
-- [ ] `tenant_id` middleware
-- [ ] Tenant-aware queries
-- [ ] Organization isolation helpers
+- [x] `tenant_id` middleware
+- [x] Tenant-aware queries
+- [x] Organization isolation helpers
 
 ### Checklist — authentication (email)
 
-- [ ] Auth.js configuration (`auth.ts`, route handler)
-- [ ] Login page
-- [ ] Register page (creates user + tenant)
-- [ ] Forgot password flow
-- [ ] Session management
-- [ ] RBAC middleware
+- [x] Auth.js configuration (`auth.ts`, route handler)
+- [x] Login page
+- [x] Register page (creates user + tenant)
+- [x] Forgot password flow
+- [x] Session management
+- [x] RBAC middleware
 
 ### Checklist — Google OAuth
 
-- [ ] Google provider in Auth.js
-- [ ] `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` in `.env.example`
-- [ ] Login UI: “Continue with Google” button
-- [ ] Register UI: Google sign-up path
-- [ ] New Google user → default tenant + role assignment
-- [ ] Existing email user → link Google `accounts` row
-- [ ] Error states (denied consent, email mismatch)
-- [ ] Document redirect URIs in `other.md`
+- [x] Google provider in Auth.js
+- [x] `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` in `.env.example`
+- [x] Login UI: “Continue with Google” button
+- [x] Register UI: Google sign-up path
+- [x] New Google user → default tenant + role assignment
+- [x] Existing email user → link Google `accounts` row
+- [x] Error states (denied consent, email mismatch)
+- [x] Document redirect URIs in `other.md`
 
 ### Checklist — seeder
 
-- [ ] Super admin seed
-- [ ] Default plans
-- [ ] Demo tenant + demo users (credentials + optional Google test note)
+- [x] Super admin seed
+- [x] Default plans
+- [x] Demo tenant + demo users (credentials + optional Google test note)
 
 ### Exit criteria
 
-- [ ] Email login/register works
-- [ ] Google sign-in completes and lands on dashboard
-- [ ] Queries scoped by `tenant_id`
-- [ ] Migrations apply cleanly
+- [x] Email login/register works
+- [x] Google sign-in completes and lands on dashboard (when OAuth env configured)
+- [x] Queries scoped by `tenant_id`
+- [x] Migrations apply cleanly
 
 ### Deliverable
 
@@ -252,11 +252,13 @@ Working auth (email + Google), multi-tenant Prisma schema.
 
 **Cursor prompt:** `Implement Phase 3 from @.cursor/planning/plan.md`
 
-**Goal:** Premium SaaS admin shell (protected routes).
+**Design reference (required):** [`.cursor/design-reference/README.md`](../design-reference/README.md) · `dashboard.png` · `event-form.png`
+
+**Goal:** Premium SaaS admin shell (protected routes). Extend the Phase 2.5 dashboard shell already aligned to reference.
 
 ### Checklist — layout
 
-- [ ] Sidebar, top navbar
+- [x] Sidebar, top navbar (shell — see design-reference)
 - [ ] Workspace / tenant switcher
 - [ ] Notification dropdown (UI shell)
 - [ ] User profile dropdown (show provider: Google vs email)
@@ -264,12 +266,12 @@ Working auth (email + Google), multi-tenant Prisma schema.
 
 ### Checklist — dashboard
 
-- [ ] KPI cards
+- [x] KPI cards (placeholder data)
 - [ ] Chart placeholders (Recharts)
 - [ ] Ticket sales widgets
-- [ ] Activity feed
+- [x] Activity feed (empty state)
 - [ ] Event status cards
-- [ ] Skeleton loading + empty states
+- [x] Skeleton loading + empty states (upcoming events)
 
 ### Checklist — polish
 
