@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lucky Draw SaaS
 
-## Getting Started
+Multi-tenant platform for raffles, lucky draws, and ticket-selling events.
 
-First, run the development server:
+## Stack
+
+- Next.js 15 (App Router)
+- TypeScript, Tailwind CSS v4, shadcn/ui
+- Prisma + PostgreSQL (schema in Phase 2)
+- Auth.js (wired in Phase 2)
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env
+npm run docker:up    # PostgreSQL on localhost:5432
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- App: [http://localhost:3000](http://localhost:3000)
+- Design system showcase: [http://localhost:3000/design-system](http://localhost:3000/design-system)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Start dev server (Turbopack) |
+| `npm run build`     | Production build             |
+| `npm run lint`      | ESLint                       |
+| `npm run format`    | Prettier write               |
+| `npm run typecheck` | TypeScript check             |
+| `npm run docker:up` | Start Postgres via Docker    |
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/           Next.js routes
+components/    UI + providers
+lib/           Utilities, Prisma client
+modules/       Feature modules (Phase 2+)
+services/      Business logic
+repositories/  Data access
+hooks/         React hooks
+store/         Zustand stores
+validators/    Zod schemas
+types/         Shared TypeScript types
+prisma/        Database schema
+middleware.ts  Request middleware
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Implementation phases
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See [`.cursor/planning/plan.md`](.cursor/planning/plan.md) for the full phase-by-phase plan.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Current:** Phase 1 complete · **Next:** Phase 2 (database, multi-tenant, Google OAuth)
