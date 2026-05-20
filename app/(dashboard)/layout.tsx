@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
-import { AppSidebar } from "@/components/layout/app-sidebar";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { getRecentActivity, getUserTenants } from "@/lib/dashboard";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -13,12 +14,25 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const { user } = session;
+
+  const [tenants, activities] = await Promise.all([
+    getUserTenants(user.id),
+    getRecentActivity(user.tenantId),
+  ]);
+
   return (
-    <div className="flex min-h-screen bg-background">
-      <AppSidebar userName={session.user.name} userEmail={session.user.email} />
-      <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
-        {children}
-      </div>
-    </div>
+    <DashboardShell
+      userName={user.name}
+      userEmail={user.email}
+      userImage={user.image}
+      userRoleSlug={user.roleSlug}
+      authProviders={user.authProviders ?? []}
+      tenants={tenants}
+      activeTenantId={user.tenantId}
+      activities={activities}
+    >
+      {children}
+    </DashboardShell>
   );
 }

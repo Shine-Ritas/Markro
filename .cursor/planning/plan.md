@@ -44,8 +44,8 @@ Build a modern **multi-tenant** Lucky Draw SaaS for organizations running raffle
 | ----- | ------------------------------ | ----------------- |
 | 1     | Project foundation             | `[x]` Done        |
 | 2     | Database & multi-tenant + auth | `[x]` Done        |
-| 3     | Dashboard & layout             | `[ ]` Not started |
-| 4     | Event management               | `[ ]` Not started |
+| 3     | Dashboard & layout             | `[x]` Done        |
+| 4     | Event management               | `[x]` Done        |
 | 5     | Ticket management              | `[ ]` Not started |
 | 6     | POS system                     | `[ ]` Not started |
 | 7     | Lucky draw engine              | `[ ]` Not started |
@@ -259,31 +259,31 @@ Working auth (email + Google), multi-tenant Prisma schema.
 ### Checklist — layout
 
 - [x] Sidebar, top navbar (shell — see design-reference)
-- [ ] Workspace / tenant switcher
-- [ ] Notification dropdown (UI shell)
-- [ ] User profile dropdown (show provider: Google vs email)
-- [ ] Breadcrumbs
+- [x] Workspace / tenant switcher
+- [x] Notification dropdown (UI shell)
+- [x] User profile dropdown (show provider: Google vs email)
+- [x] Breadcrumbs
 
 ### Checklist — dashboard
 
 - [x] KPI cards (placeholder data)
-- [ ] Chart placeholders (Recharts)
-- [ ] Ticket sales widgets
-- [x] Activity feed (empty state)
-- [ ] Event status cards
+- [x] Chart placeholders (Recharts)
+- [x] Ticket sales widgets
+- [x] Activity feed (real audit logs + empty state)
+- [x] Event status cards
 - [x] Skeleton loading + empty states (upcoming events)
 
 ### Checklist — polish
 
-- [ ] Framer Motion transitions
-- [ ] Responsive breakpoints
-- [ ] Auth guard on all `/app` routes
+- [x] Framer Motion transitions
+- [x] Responsive breakpoints
+- [x] Auth guard on all `/dashboard` routes
 
 ### Exit criteria
 
-- [ ] Logged-in user sees dashboard
-- [ ] Google and email users see same layout
-- [ ] Mobile layout usable
+- [x] Logged-in user sees dashboard
+- [x] Google and email users see same layout
+- [x] Mobile layout usable
 
 ### Deliverable
 
@@ -297,19 +297,19 @@ Premium SaaS dashboard UI.
 
 ### Checklist — CRUD
 
-- [ ] Create, edit, delete, publish, archive events
-- [ ] Fields: name, description, banner, rules, dates, draw schedule, ticket qty, winner count
+- [x] Create, edit, delete, publish, archive events
+- [x] Fields: name, description, banner, rules, dates, draw schedule, ticket qty, winner count
 
 ### Checklist — UI
 
-- [ ] Event cards, table, calendar view
-- [ ] Event detail page (admin)
-- [ ] Public landing + event detail (ticket UI placeholder)
+- [x] Event cards, table, calendar view
+- [x] Event detail page (admin)
+- [x] Public landing + event detail (ticket UI placeholder)
 
 ### Exit criteria
 
-- [ ] Full event lifecycle tenant-scoped
-- [ ] Public page renders without auth
+- [x] Full event lifecycle tenant-scoped
+- [x] Public page renders without auth
 
 ### Deliverable
 

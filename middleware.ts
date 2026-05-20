@@ -16,6 +16,7 @@ const publicPaths = [
 function isPublicPath(pathname: string) {
   if (publicPaths.includes(pathname)) return true;
   if (pathname.startsWith("/api/auth")) return true;
+  if (pathname.startsWith("/org/")) return true;
   return false;
 }
 

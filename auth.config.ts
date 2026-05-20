@@ -27,6 +27,7 @@ export const authConfig = {
         session.user.tenantName = token.tenantName as string | undefined;
         session.user.roleSlug = token.roleSlug as string | undefined;
         session.user.permissions = (token.permissions as string[]) ?? [];
+        session.user.authProviders = (token.authProviders as string[]) ?? [];
       }
       return session;
     },

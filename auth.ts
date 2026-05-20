@@ -24,6 +24,17 @@ async function enrichToken(userId: string) {
 
   const membership = await getPrimaryStaffMembership(userId);
 
+  const accounts = await prisma.account.findMany({
+    where: { userId },
+    select: { provider: true },
+  });
+  const providers = new Set(accounts.map((a) => a.provider));
+  const userAuth = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  });
+  if (userAuth?.passwordHash) providers.add("credentials");
+
   return {
     sub: userId,
     isSuperAdmin: dbUser.isSuperAdmin,
@@ -32,6 +43,7 @@ async function enrichToken(userId: string) {
     tenantName: membership?.tenantName,
     roleSlug: membership?.roleSlug ?? (dbUser.isSuperAdmin ? "super_admin" : undefined),
     permissions: membership?.permissions ?? (dbUser.isSuperAdmin ? ["*"] : []),
+    authProviders: Array.from(providers),
   };
 }
 

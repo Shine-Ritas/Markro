@@ -21,9 +21,9 @@
 
 | Field            | Value                                              |
 | ---------------- | -------------------------------------------------- |
-| **Active phase** | Design reference applied → start Phase 3           |
+| **Active phase** | Phase 3 complete → start Phase 4                   |
 | **Last updated** | 2026-05-20                                         |
-| **Next action**  | `Implement Phase 3 from @.cursor/planning/plan.md` |
+| **Next action**  | `Implement Phase 4 from @.cursor/planning/plan.md` |
 
 ---
 
@@ -120,6 +120,50 @@
 
 -
 ```
+
+---
+
+#### Phase 4 — 2026-05-20
+
+**Completed:**
+
+- `Event` model + migration `20260520124015_add_events_phase4`
+- Tenant-scoped APIs: `GET/POST /api/events`, `GET/PATCH/DELETE /api/events/[id]`, publish/archive actions
+- Admin UI: `/dashboard/events` (cards/table/calendar), new/edit/detail
+- Public pages: `/org/[tenantSlug]`, `/org/[tenantSlug]/events/[eventSlug]` (no auth; ticket CTA placeholder)
+- Sidebar Events enabled; dashboard wired to real event counts/upcoming list
+
+**How to verify:**
+
+1. Sign in as `demo@demo.com` / `Demo1234!`
+2. Create event → publish → open public link from detail page
+3. Visit `/org/demo-org` in incognito (no login)
+
+**Notes for Phase 5:**
+
+- Ticket model + sales UI on public event page
+
+---
+
+#### Phase 3 — 2026-05-20
+
+**Completed:**
+
+- `DashboardShell`: fixed sidebar, mobile sheet, header with breadcrumbs
+- Tenant switcher, notification dropdown (audit-based), user menu with auth providers
+- Recharts revenue + ticket charts, event status row, activity feed
+- Framer Motion stagger, loading skeleton, session `authProviders`
+
+**How to verify:**
+
+1. Sign in → `/dashboard`
+2. Resize to mobile — hamburger opens sidebar sheet
+3. User menu shows Email and/or Google badge
+
+**Notes for Phase 4:**
+
+- Event form UI: follow `event-form.png`
+- Re-sign-in once to refresh JWT if `authProviders` missing on old sessions
 
 ---
 
@@ -242,5 +286,7 @@
 _Free-form notes during development — clear when phase ships._
 
 ```
-Phase 2 shipped. Run db:seed before first login.
+Phase 4 shipped — events CRUD + public /org/[tenantSlug] pages.
+Migration: 20260520124015_add_events_phase4
+Demo org public URL: /org/demo-org (after publishing an event)
 ```

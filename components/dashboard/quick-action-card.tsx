@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +8,7 @@ type QuickActionCardProps = {
   icon: LucideIcon;
   iconClassName: string;
   disabled?: boolean;
+  href?: string;
 };
 
 export function QuickActionCard({
@@ -15,19 +17,15 @@ export function QuickActionCard({
   icon: Icon,
   iconClassName,
   disabled,
+  href,
 }: QuickActionCardProps) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={cn(
-        "flex w-full items-start gap-3 rounded-xl border border-border bg-card/50 p-4 text-left transition-colors",
-        disabled
-          ? "cursor-not-allowed opacity-60"
-          : "hover:border-primary/30 hover:bg-card"
-      )}
-      title={disabled ? "Coming in a later phase" : undefined}
-    >
+  const className = cn(
+    "flex w-full items-start gap-3 rounded-xl border border-border bg-card/50 p-4 text-left transition-colors",
+    disabled ? "cursor-not-allowed opacity-60" : "hover:border-primary/30 hover:bg-card"
+  );
+
+  const inner = (
+    <>
       <div
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-lg",
@@ -40,6 +38,25 @@ export function QuickActionCard({
         <p className="font-medium">{title}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
+    </>
+  );
+
+  if (href && !disabled) {
+    return (
+      <Link href={href} className={className}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={className}
+      title={disabled ? "Coming in a later phase" : undefined}
+    >
+      {inner}
     </button>
   );
 }

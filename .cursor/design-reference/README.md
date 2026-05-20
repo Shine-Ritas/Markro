@@ -11,15 +11,16 @@ Canonical UI reference for implementation. **Do not duplicate these files elsewh
 
 ## Brand
 
-| Token           | Value                                      |
-| --------------- | ------------------------------------------ |
-| Product name    | **LuckyDraw Pro**                          |
-| Tagline         | Event Management                           |
-| Theme           | Dark-first (navy/charcoal + purple accent) |
-| Primary accent  | Purple `oklch(0.58 0.24 285)`              |
-| Background      | Deep navy `oklch(0.13 0.015 285)`          |
-| Card surface    | `oklch(0.19 0.02 285)`                     |
-| Success / trend | Green `oklch(0.72 0.19 145)`               |
+| Token           | Value                                                      |
+| --------------- | ---------------------------------------------------------- |
+| Product name    | **LuckyDraw Pro**                                          |
+| Tagline         | Event Management                                           |
+| Theme           | Dark-first (navy/charcoal + purple accent)                 |
+| Primary accent  | Purple `oklch(0.58 0.24 285)`                              |
+| Background      | Deep navy `oklch(0.13 0.015 285)`                          |
+| Card surface    | `oklch(0.19 0.02 285)`                                     |
+| Success / trend | Green `oklch(0.72 0.19 145)`                               |
+| Typography      | **Plus Jakarta Sans** (UI) · **JetBrains Mono** (IDs/code) |
 
 ## Layout (dashboard)
 

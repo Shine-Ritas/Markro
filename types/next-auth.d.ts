@@ -14,6 +14,7 @@ declare module "next-auth" {
       tenantName?: string;
       roleSlug?: string;
       permissions: string[];
+      authProviders: string[];
     };
   }
 
@@ -31,5 +32,6 @@ declare module "next-auth/jwt" {
     tenantName?: string;
     roleSlug?: string;
     permissions?: string[];
+    authProviders?: string[];
   }
 }

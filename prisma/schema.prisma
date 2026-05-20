@@ -87,6 +87,7 @@ model Tenant {
   roles         Role[]
   subscriptions Subscription[]
   auditLogs     AuditLog[]
+  events        Event[]
 
   @@index([status])
   @@index([deletedAt])
@@ -214,6 +215,43 @@ enum SubscriptionStatus {
   TRIALING
   CANCELLED
   EXPIRED
+}
+
+// ─── Events (Phase 4) ───────────────────────────────────────────────────────
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Event {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  name            String
+  slug            String
+  description     String?     @db.Text
+  bannerUrl       String?     @map("banner_url")
+  rules           String?     @db.Text
+  venue           String?
+  startDate       DateTime    @map("start_date")
+  endDate         DateTime?   @map("end_date")
+  drawScheduledAt DateTime?   @map("draw_scheduled_at")
+  ticketQuantity  Int         @default(0) @map("ticket_quantity")
+  winnerCount     Int         @default(1) @map("winner_count")
+  status          EventStatus @default(DRAFT)
+  publishedAt     DateTime?   @map("published_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  deletedAt       DateTime?   @map("deleted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([tenantId, deletedAt])
+  @@index([startDate])
+  @@map("events")
 }
 
 // ─── Audit ──────────────────────────────────────────────────────────────────
