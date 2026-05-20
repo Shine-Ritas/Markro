@@ -1,12 +1,14 @@
-import type { EventStatus, Prisma } from "@prisma/client";
+import type { EventStatus, Prisma, TicketListView } from "@prisma/client";
 import {
   combineDateAndTime,
+  eventWithDesignInclude,
   slugifyEventName,
   toEventDto,
   toEventListItem,
 } from "@/lib/events";
 import { createAuditLog } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import { getDefaultTicketDesignId } from "@/services/ticket-design.service";
 import type { EventFormValues } from "@/validators/events";
 
 export type EventInput = EventFormValues;
@@ -53,6 +55,8 @@ function mapFormToData(input: EventInput) {
     drawScheduledAt,
     ticketQuantity: input.ticketQuantity,
     winnerCount: input.winnerCount,
+    ticketDesignId: input.ticketDesignId ?? undefined,
+    ticketListViewDefault: (input.ticketListViewDefault ?? "GRID") as TicketListView,
     status: input.status,
   };
 }
@@ -86,6 +90,7 @@ export async function listTenantEvents(
 export async function getTenantEventById(tenantId: string, eventId: string) {
   const event = await prisma.event.findFirst({
     where: { id: eventId, tenantId, deletedAt: null },
+    include: eventWithDesignInclude,
   });
   return event ? toEventDto(event) : null;
 }
@@ -112,14 +117,18 @@ export async function createTenantEvent(
   const slug = await uniqueEventSlug(tenantId, data.name);
 
   const status = data.status ?? "DRAFT";
+  const ticketDesignId = data.ticketDesignId ?? (await getDefaultTicketDesignId());
+
   const event = await prisma.event.create({
     data: {
       tenantId,
       slug,
       ...data,
+      ticketDesignId,
       status,
       publishedAt: status === "PUBLISHED" ? new Date() : null,
     },
+    include: eventWithDesignInclude,
   });
 
   await createAuditLog({
@@ -156,6 +165,7 @@ export async function updateTenantEvent(
     data: {
       ...data,
       slug,
+      ticketDesignId: data.ticketDesignId ?? null,
       publishedAt:
         data.status === "PUBLISHED" && !existing.publishedAt
           ? new Date()
@@ -163,6 +173,7 @@ export async function updateTenantEvent(
             ? null
             : existing.publishedAt,
     },
+    include: eventWithDesignInclude,
   });
 
   await createAuditLog({
@@ -192,6 +203,7 @@ export async function publishTenantEvent(
       status: "PUBLISHED",
       publishedAt: existing.publishedAt ?? new Date(),
     },
+    include: eventWithDesignInclude,
   });
 
   await createAuditLog({
@@ -218,6 +230,7 @@ export async function archiveTenantEvent(
   const event = await prisma.event.update({
     where: { id: eventId },
     data: { status: "ARCHIVED" },
+    include: eventWithDesignInclude,
   });
 
   await createAuditLog({
@@ -244,6 +257,7 @@ export async function deleteTenantEvent(
   const event = await prisma.event.update({
     where: { id: eventId },
     data: { deletedAt: new Date() },
+    include: eventWithDesignInclude,
   });
 
   await createAuditLog({

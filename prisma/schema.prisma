@@ -23,8 +23,9 @@ model User {
 
   accounts Account[]
   sessions Session[]
-  staff    Staff[]
-  auditLogs AuditLog[] @relation("AuditLogActor")
+  staff               Staff[]
+  auditLogs           AuditLog[]           @relation("AuditLogActor")
+  ticketTransactions  TicketTransaction[]
 
   @@index([deletedAt])
   @@map("users")
@@ -225,33 +226,166 @@ enum EventStatus {
   ARCHIVED
 }
 
-model Event {
-  id              String      @id @default(uuid()) @db.Uuid
-  tenantId        String      @map("tenant_id") @db.Uuid
-  name            String
-  slug            String
-  description     String?     @db.Text
-  bannerUrl       String?     @map("banner_url")
-  rules           String?     @db.Text
-  venue           String?
-  startDate       DateTime    @map("start_date")
-  endDate         DateTime?   @map("end_date")
-  drawScheduledAt DateTime?   @map("draw_scheduled_at")
-  ticketQuantity  Int         @default(0) @map("ticket_quantity")
-  winnerCount     Int         @default(1) @map("winner_count")
-  status          EventStatus @default(DRAFT)
-  publishedAt     DateTime?   @map("published_at")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  deletedAt       DateTime?   @map("deleted_at")
+enum TicketListView {
+  GRID
+  COMPACT
+  SHOWCASE
+  TABLE
+}
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+model TicketDesignPreset {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique
+  name        String
+  description String?
+  previewUrl  String?  @map("preview_url")
+  theme       Json
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  events Event[]
+
+  @@map("ticket_design_presets")
+}
+
+model Event {
+  id                    String          @id @default(uuid()) @db.Uuid
+  tenantId              String          @map("tenant_id") @db.Uuid
+  name                  String
+  slug                  String
+  description           String?         @db.Text
+  bannerUrl             String?         @map("banner_url")
+  rules                 String?         @db.Text
+  venue                 String?
+  startDate             DateTime        @map("start_date")
+  endDate               DateTime?       @map("end_date")
+  drawScheduledAt       DateTime?       @map("draw_scheduled_at")
+  ticketQuantity        Int             @default(0) @map("ticket_quantity")
+  winnerCount           Int             @default(1) @map("winner_count")
+  ticketDesignId        String?         @map("ticket_design_id") @db.Uuid
+  ticketListViewDefault TicketListView  @default(GRID) @map("ticket_list_view_default")
+  status                EventStatus     @default(DRAFT)
+  publishedAt           DateTime?       @map("published_at")
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+  deletedAt             DateTime?       @map("deleted_at")
+
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ticketDesign   TicketDesignPreset? @relation(fields: [ticketDesignId], references: [id], onDelete: SetNull)
+  ticketTypes    TicketType[]
+  pricePeriods   TicketPricePeriod[]
+  tickets        Ticket[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, status])
   @@index([tenantId, deletedAt])
   @@index([startDate])
+  @@index([ticketDesignId])
   @@map("events")
+}
+
+// ─── Tickets (Phase 5) ──────────────────────────────────────────────────────
+
+enum TicketStatus {
+  AVAILABLE
+  SOLD
+  VALIDATED
+  CANCELLED
+}
+
+enum TicketTransactionType {
+  GENERATED
+  SALE
+  VALIDATION
+  REFUND
+}
+
+model TicketType {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  eventId     String    @map("event_id") @db.Uuid
+  name        String
+  slug        String
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  event        Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  pricePeriods TicketPricePeriod[]
+  tickets      Ticket[]
+
+  @@unique([eventId, slug])
+  @@index([tenantId, eventId])
+  @@map("ticket_types")
+}
+
+/// Date-range pricing — no history log; tickets snapshot priceCents at creation.
+model TicketPricePeriod {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  eventId      String    @map("event_id") @db.Uuid
+  ticketTypeId String?   @map("ticket_type_id") @db.Uuid
+  label        String?
+  priceCents   Int       @map("price_cents")
+  startsAt     DateTime  @map("starts_at")
+  endsAt       DateTime? @map("ends_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketType TicketType? @relation(fields: [ticketTypeId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, startsAt, endsAt])
+  @@index([tenantId, eventId])
+  @@map("ticket_price_periods")
+}
+
+model Ticket {
+  id            String       @id @default(uuid()) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  eventId       String       @map("event_id") @db.Uuid
+  ticketTypeId  String?      @map("ticket_type_id") @db.Uuid
+  ticketNumber  String       @map("ticket_number")
+  priceCents    Int          @map("price_cents")
+  status        TicketStatus @default(AVAILABLE)
+  qrToken       String       @unique @map("qr_token")
+  soldAt        DateTime?    @map("sold_at")
+  validatedAt   DateTime?    @map("validated_at")
+  lastScannedAt DateTime?    @map("last_scanned_at")
+  scanCount     Int          @default(0) @map("scan_count")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  event        Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketType   TicketType?         @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
+  transactions TicketTransaction[]
+
+  @@unique([eventId, ticketNumber])
+  @@index([tenantId, eventId, status])
+  @@index([eventId, deletedAt])
+  @@map("tickets")
+}
+
+model TicketTransaction {
+  id          String                @id @default(uuid()) @db.Uuid
+  tenantId    String                @map("tenant_id") @db.Uuid
+  ticketId    String                @map("ticket_id") @db.Uuid
+  type        TicketTransactionType
+  amountCents Int?                  @map("amount_cents")
+  note        String?
+  actorId     String?               @map("actor_id") @db.Uuid
+  createdAt   DateTime              @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor  User?  @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("ticket_transactions")
 }
 
 // ─── Audit ──────────────────────────────────────────────────────────────────

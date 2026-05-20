@@ -2,9 +2,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { EventDetailActions } from "@/components/events/event-detail-actions";
+import { EventTicketsManager } from "@/components/events/event-tickets-manager";
+import { EventPriceSchedule } from "@/components/events/event-price-schedule";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { getTenantEventById } from "@/services/event.service";
+import {
+  listEventTickets,
+  listEventPricePeriods,
+  resolveCurrentPriceForEvent,
+} from "@/services/ticket.service";
 import { Calendar, MapPin, Ticket, Trophy } from "lucide-react";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -14,7 +21,15 @@ export default async function EventDetailPage({ params }: PageProps) {
   if (!session?.user?.tenantId) redirect("/login");
 
   const { id } = await params;
-  const event = await getTenantEventById(session.user.tenantId, id);
+  const tenantId = session.user.tenantId;
+
+  const [event, tickets, periods, currentPriceCents] = await Promise.all([
+    getTenantEventById(tenantId, id),
+    listEventTickets(tenantId, id),
+    listEventPricePeriods(tenantId, id),
+    resolveCurrentPriceForEvent(tenantId, id),
+  ]);
+
   if (!event) notFound();
 
   return (
@@ -117,8 +132,30 @@ export default async function EventDetailPage({ params }: PageProps) {
         </section>
       ) : null}
 
+      {event.ticketDesign ? (
+        <section className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-heading font-semibold">Ticket design</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {event.ticketDesign.name} · Default view:{" "}
+            {event.ticketListViewDefault.toLowerCase()}
+          </p>
+        </section>
+      ) : null}
+
+      <EventPriceSchedule
+        eventId={event.id}
+        periods={periods}
+        currentPriceCents={currentPriceCents}
+      />
+
+      <EventTicketsManager
+        event={event}
+        tenantName={session.user.tenantName ?? "Organization"}
+        initialTickets={tickets}
+        currentPriceCents={currentPriceCents}
+      />
+
       <p className="text-xs text-muted-foreground">
-        Ticket sales UI arrives in Phase 5.{" "}
         {event.status === "PUBLISHED" ? (
           <Link
             href={`/org/${session.user.tenantSlug}/events/${event.slug}`}

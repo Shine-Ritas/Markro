@@ -31,7 +31,7 @@ type NavItem = {
 const mainNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Events", href: "/dashboard/events", icon: Calendar },
-  { label: "Tickets", href: "/dashboard/tickets", icon: Ticket, disabled: true },
+  { label: "Tickets", href: "/dashboard/tickets", icon: Ticket },
   { label: "Prizes", href: "/dashboard/prizes", icon: Gift, disabled: true },
   { label: "Lucky Draw", href: "/dashboard/draws", icon: Sparkles, disabled: true },
   { label: "Winners", href: "/dashboard/winners", icon: Trophy, disabled: true },

@@ -21,9 +21,9 @@
 
 | Field            | Value                                              |
 | ---------------- | -------------------------------------------------- |
-| **Active phase** | Phase 3 complete → start Phase 4                   |
+| **Active phase** | Phase 5 complete                                   |
 | **Last updated** | 2026-05-20                                         |
-| **Next action**  | `Implement Phase 4 from @.cursor/planning/plan.md` |
+| **Next action**  | `Implement Phase 6 from @.cursor/planning/plan.md` |
 
 ---
 
@@ -78,6 +78,8 @@
 | 2026-05-20 | JWT sessions + Prisma adapter                   | Credentials provider requires JWT; adapter stores OAuth accounts                                 |
 | 2026-05-20 | `allowDangerousEmailAccountLinking`             | Links Google to existing email/password users                                                    |
 | 2026-05-20 | Design reference in `.cursor/design-reference/` | Single source for UI mockups; dark LuckyDraw Pro theme applied before Phase 3                    |
+| 2026-05-20 | Ticket designs = JSON presets + per-event FK    | New card themes ship via seed/catalog; `events.ticket_design_id`; borders + full card in `theme` |
+| 2026-05-20 | Ticket list views + Take photo export           | `grid` / `compact` / `showcase` / `table`; PNG via client capture for social sharing             |
 
 ---
 
@@ -91,9 +93,9 @@
 
 ## Tech debt & follow-ups
 
-| Item   | Phase introduced | Priority |
-| ------ | ---------------- | -------- |
-| _none_ | —                | —        |
+| Item                                        | Phase introduced | Priority |
+| ------------------------------------------- | ---------------- | -------- |
+| Phase 5: real tickets + branded card render | 5                | High     |
 
 ---
 
@@ -120,6 +122,23 @@
 
 -
 ```
+
+---
+
+#### Phase 4 (ticket design & share) — 2026-05-20
+
+**Completed:**
+
+- `ticket_design_presets` + `events.ticket_design_id` / `ticket_list_view_default`
+- Seed catalog: `prisma/seeds/ticket-designs.ts` (classic, minimal, glow, festive, corporate)
+- Event form: design picker + default list view
+- Event detail: tickets panel, view switcher, **Take photo** PNG export (1:1, 4:5, 16:9)
+- `GET /api/ticket-designs`, `html-to-image` export
+
+**How to verify:**
+
+1. Edit event → pick ticket design → save
+2. Event detail → switch views → Take photo → Download PNG
 
 ---
 
@@ -286,7 +305,7 @@
 _Free-form notes during development — clear when phase ships._
 
 ```
-Phase 4 shipped — events CRUD + public /org/[tenantSlug] pages.
-Migration: 20260520124015_add_events_phase4
-Demo org public URL: /org/demo-org (after publishing an event)
+Phase 4 complete — events + ticket design presets + Take photo export.
+Migrations: 20260520124015_add_events_phase4, 20260520133208_phase4_ticket_designs
+Add new ticket themes in prisma/seeds/ticket-designs.ts then npm run db:seed
 ```

@@ -19,14 +19,23 @@ import {
 } from "@/components/ui/select";
 import { eventFormSchema, type EventFormValues } from "@/validators/events";
 import { toDateInputValue, toTimeInputValue } from "@/lib/format";
+import { TicketDesignPicker } from "@/components/tickets/ticket-design-picker";
+import { TICKET_LIST_VIEW_LABELS, TICKET_LIST_VIEWS } from "@/types/ticket-designs";
+import type { TicketDesignPresetDto } from "@/types/ticket-designs";
 import type { EventDto } from "@/types/events";
+import type { TicketListView } from "@prisma/client";
 
 type EventFormProps = {
   mode: "create" | "edit";
   event?: EventDto;
+  designPresets: TicketDesignPresetDto[];
+  defaultDesignId: string;
 };
 
-function defaultValues(event?: EventDto): EventFormValues {
+function defaultValues(
+  event: EventDto | undefined,
+  defaultDesignId: string
+): EventFormValues {
   if (!event) {
     return {
       name: "",
@@ -42,6 +51,8 @@ function defaultValues(event?: EventDto): EventFormValues {
       drawScheduledTime: "",
       ticketQuantity: 100,
       winnerCount: 1,
+      ticketDesignId: defaultDesignId,
+      ticketListViewDefault: "GRID",
       status: "DRAFT",
     };
   }
@@ -60,6 +71,8 @@ function defaultValues(event?: EventDto): EventFormValues {
     drawScheduledTime: toTimeInputValue(event.drawScheduledAt),
     ticketQuantity: event.ticketQuantity,
     winnerCount: event.winnerCount,
+    ticketDesignId: event.ticketDesignId ?? defaultDesignId,
+    ticketListViewDefault: event.ticketListViewDefault,
     status: event.status,
   };
 }
@@ -84,7 +97,12 @@ function FormSection({
   );
 }
 
-export function EventForm({ mode, event }: EventFormProps) {
+export function EventForm({
+  mode,
+  event,
+  designPresets,
+  defaultDesignId,
+}: EventFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
@@ -96,10 +114,13 @@ export function EventForm({ mode, event }: EventFormProps) {
     formState: { errors },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: defaultValues(event),
+    defaultValues: defaultValues(event, defaultDesignId),
   });
 
   const status = watch("status");
+  const eventName = watch("name");
+  const ticketDesignId = watch("ticketDesignId");
+  const ticketListViewDefault = watch("ticketListViewDefault");
 
   async function onSubmit(values: EventFormValues) {
     setSubmitting(true);
@@ -256,6 +277,40 @@ export function EventForm({ mode, event }: EventFormProps) {
               <p className="text-sm text-destructive">{errors.winnerCount.message}</p>
             ) : null}
           </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Ticket appearance"
+        description="Card design and default list layout for this event (used when tickets go live)"
+      >
+        <TicketDesignPicker
+          presets={designPresets}
+          value={ticketDesignId ?? defaultDesignId}
+          onChange={(id) => setValue("ticketDesignId", id, { shouldValidate: true })}
+          eventName={eventName || "Your Event"}
+        />
+        <div className="space-y-2 max-w-md">
+          <Label>Default ticket list view</Label>
+          <Select
+            value={ticketListViewDefault ?? "GRID"}
+            onValueChange={(v) =>
+              setValue("ticketListViewDefault", v as TicketListView, {
+                shouldValidate: true,
+              })
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select view" />
+            </SelectTrigger>
+            <SelectContent>
+              {TICKET_LIST_VIEWS.map((view) => (
+                <SelectItem key={view} value={view}>
+                  {TICKET_LIST_VIEW_LABELS[view]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </FormSection>
 

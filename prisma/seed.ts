@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../lib/password";
 import { ensurePermissions } from "../lib/auth-provisioning";
+import { seedTicketDesignPresets } from "./seeds/ticket-designs";
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,7 @@ async function main() {
   console.log("Seeding database…");
 
   await ensurePermissions();
+  await seedTicketDesignPresets();
 
   const plans = [
     {

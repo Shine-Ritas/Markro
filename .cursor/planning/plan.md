@@ -35,6 +35,52 @@ Build a modern **multi-tenant** Lucky Draw SaaS for organizations running raffle
 - Multi-tenant PostgreSQL
 - Events, tickets, POS, lucky draw engine
 - Dashboard and modern UI/UX
+- **Custom ticket card designs** (per event) + **social-ready ticket list exports**
+
+---
+
+## Ticket cards, layouts & social export
+
+> **Product requirement** spanning **Phase 4** (event settings + share UX) and **Phase 5** (ticket data + rendering).  
+> Design presets will be **added often** — architecture must support new themes without migrations every time.
+
+### Goals
+
+| Capability                  | Description                                                                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Per-event ticket design** | Each event selects a ticket card theme (border, background, typography, logo/badge placement).             |
+| **Design catalog**          | System ships multiple presets; later: tenant-uploaded assets / custom CSS tokens.                          |
+| **Flexible card views**     | Ticket list supports multiple layouts (grid cards, compact list, showcase strip, table) — user-switchable. |
+| **Take photo / export**     | Org captures a high-quality image of the ticket list (or event promo card) to post on social media.        |
+
+### Design preset fields (minimum)
+
+- Preset `slug`, `name`, preview thumbnail
+- Card: `borderStyle`, `borderColor`, `background`, `accentColor`, `fontFamily` (optional)
+- Layout hints: QR position, number prominence, event branding slot
+
+### Data model (Phase 5)
+
+- [ ] `ticket_design_presets` — seeded catalog (extensible JSON `theme` column)
+- [ ] `events.ticket_design_id` — FK, nullable → default preset
+- [ ] Optional: `events.ticket_list_view_default` — enum (`grid` \| `compact` \| `showcase` \| `table`)
+
+### UX surfaces
+
+| Surface                                                       | Phase                                  | Notes                                                                                 |
+| ------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| Event create/edit — **Ticket design** dropdown + live preview | 4 (picker UI) → 5 (applies to tickets) | Same section as ticket qty / winner count                                             |
+| Event detail — **View as** card layout switcher               | 4                                      | Applies to ticket list when Phase 5 exists                                            |
+| Event detail — **Take photo** button                          | 4                                      | `html-to-image` or canvas export; includes event branding; ticket grid when available |
+| Tickets page — layout switcher + design preview               | 5                                      | Renders each ticket with event’s selected design                                      |
+| Public event page — ticket showcase (optional)                | 5+                                     | Read-only branded cards                                                               |
+
+### Technical notes (for agents)
+
+- Store preset `theme` as JSON (versioned) so new designs ship via seed/migration, not code deploy only.
+- **Take photo**: client-side DOM → PNG (e.g. `html-to-image`), fixed aspect ratio options (1:1, 4:5, 16:9) for Instagram/Facebook.
+- Card view switcher state: URL query `?view=grid` or per-user localStorage; event default from DB.
+- Screenshot target: dedicated `#ticket-share-capture` wrapper with print-safe styles (no sidebar).
 
 ---
 
@@ -46,7 +92,7 @@ Build a modern **multi-tenant** Lucky Draw SaaS for organizations running raffle
 | 2     | Database & multi-tenant + auth | `[x]` Done        |
 | 3     | Dashboard & layout             | `[x]` Done        |
 | 4     | Event management               | `[x]` Done        |
-| 5     | Ticket management              | `[ ]` Not started |
+| 5     | Ticket management              | `[x]` Done        |
 | 6     | POS system                     | `[ ]` Not started |
 | 7     | Lucky draw engine              | `[ ]` Not started |
 | 8     | Customer management            | `[ ]` Not started |
@@ -306,14 +352,26 @@ Premium SaaS dashboard UI.
 - [x] Event detail page (admin)
 - [x] Public landing + event detail (ticket UI placeholder)
 
+### Checklist — ticket design & share (Phase 4 prep → Phase 5)
+
+> Core ticket rendering is Phase 5; event phase wires **settings + export UX** first.
+
+- [x] Event form: **Ticket design** preset selector + mini preview (saved on event; applied in Phase 5)
+- [x] Event detail: **Card view** switcher placeholder (`grid` \| `compact` \| `showcase` \| `table`) for ticket list
+- [x] Event detail / tickets tab: **Take photo** — export shareable PNG (event promo; ticket grid when Phase 5 live)
+- [x] Aspect ratio options for export (1:1, 4:5, 16:9)
+- [x] Document preset catalog location: `prisma/seeds/ticket-designs.ts` (or JSON in `/public/ticket-designs/`)
+
 ### Exit criteria
 
 - [x] Full event lifecycle tenant-scoped
 - [x] Public page renders without auth
+- [x] Event saves `ticket_design_id` (or preset slug) and default list view preference
+- [x] **Take photo** produces downloadable PNG from event detail (smoke test)
 
 ### Deliverable
 
-Working event management.
+Working event management + hooks for branded tickets and social sharing.
 
 ---
 
@@ -321,29 +379,58 @@ Working event management.
 
 **Cursor prompt:** `Implement Phase 5 from @.cursor/planning/plan.md`
 
+**Depends on:** Phase 4 ticket design picker + share UX (see [Ticket cards, layouts & social export](#ticket-cards-layouts--social-export)).
+
 ### Checklist — database
 
-- [ ] `ticket_types`, `tickets`, `ticket_transactions`
+- [x] `ticket_types`, `tickets`, `ticket_transactions`
+- [x] `ticket_price_periods` (date-range pricing, no history)
+- [x] `ticket_design_presets` + `events.ticket_design_id` (Phase 4)
+
+### Checklist — pricing (no history)
+
+- [x] Periods with `startsAt` / `endsAt` and `priceCents` (e.g. early vs late month)
+- [x] Each ticket snapshots `priceCents` at generation
+- [x] Active price resolved for current date when generating
+
+### Checklist — design catalog
+
+- [x] Seed presets in `prisma/seeds/ticket-designs.ts`
+- [x] `GET /api/ticket-designs`
+- [x] Branded cards from event `ticket_design_id`
 
 ### Checklist — features
 
-- [ ] Auto numbering, bulk generation
-- [ ] QR + barcode generation
-- [ ] Inventory + status tracking
+- [x] Auto numbering, bulk generation (capacity = `event.ticketQuantity`)
+- [x] QR codes (`qrToken` + `qrcode`)
+- [x] Status tracking AVAILABLE → SOLD → VALIDATED
+- [x] Branded card rendering from preset `theme`
 
 ### Checklist — UI & validation
 
-- [ ] Ticket cards, table, detail modal, QR preview
-- [ ] QR validation API
-- [ ] Duplicate scan prevention
+- [x] Ticket cards + grid / compact / showcase / table views
+- [x] QR modal; validate API; duplicate scan blocked
+- [x] Take photo export on event tickets
+- [x] Price schedule UI on event detail; `/dashboard/tickets`
+
+### Checklist — card view options (reference)
+
+| View       | Use case                                           |
+| ---------- | -------------------------------------------------- |
+| `grid`     | Default; large branded cards, good for screenshots |
+| `compact`  | Dense list; many ticket numbers visible            |
+| `showcase` | Hero strip — top N tickets for promo posts         |
+| `table`    | Ops/admin sort, filter, export                     |
 
 ### Exit criteria
 
-- [ ] Generate, view, validate tickets end-to-end
+- [x] Generate, view, validate tickets end-to-end
+- [x] Tickets can have different prices via periods; no price history table
+- [x] Take photo + design presets (Phase 4)
 
 ### Deliverable
 
-Functional ticket system.
+Functional ticket system with **selectable branded card designs**, **flexible list layouts**, and **social-ready image export**.
 
 ---
 
@@ -579,4 +666,5 @@ Requirements: beautiful, fast, scalable, mobile-responsive, multi-tenant, produc
 
 | Date       | Change                                                                                       |
 | ---------- | -------------------------------------------------------------------------------------------- |
+| 2026-05-20 | Ticket card designs (per event), card view modes, Take photo / social export — Phase 4+5     |
 | 2026-05-20 | Restructured for Cursor phases; added Google OAuth; checklists; `bug_report.md` + `other.md` |

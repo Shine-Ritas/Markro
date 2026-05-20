@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const eventStatusSchema = z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]);
 
+export const ticketListViewSchema = z.enum(["GRID", "COMPACT", "SHOWCASE", "TABLE"]);
+
 export const eventFormSchema = z
   .object({
     name: z.string().min(2, "Name is required").max(120),
@@ -24,6 +26,8 @@ export const eventFormSchema = z
     drawScheduledTime: z.string().optional().nullable(),
     ticketQuantity: z.number().int().min(0).max(1_000_000),
     winnerCount: z.number().int().min(1).max(10_000),
+    ticketDesignId: z.string().uuid().optional().nullable(),
+    ticketListViewDefault: ticketListViewSchema.optional(),
     status: eventStatusSchema.optional(),
   })
   .refine(

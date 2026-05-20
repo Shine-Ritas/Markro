@@ -1,5 +1,10 @@
-import type { Event } from "@prisma/client";
+import type { Event, TicketDesignPreset } from "@prisma/client";
 import type { EventDto, EventListItem } from "@/types/events";
+import { toTicketDesignPresetDto } from "@/lib/ticket-designs";
+
+export type EventWithDesign = Event & {
+  ticketDesign?: TicketDesignPreset | null;
+};
 
 export function slugifyEventName(name: string): string {
   return name
@@ -16,7 +21,7 @@ export function combineDateAndTime(dateStr: string, timeStr?: string | null): Da
   return new Date(`${date}T${time}:00`);
 }
 
-export function toEventDto(event: Event): EventDto {
+export function toEventDto(event: EventWithDesign): EventDto {
   return {
     id: event.id,
     tenantId: event.tenantId,
@@ -31,12 +36,21 @@ export function toEventDto(event: Event): EventDto {
     drawScheduledAt: event.drawScheduledAt?.toISOString() ?? null,
     ticketQuantity: event.ticketQuantity,
     winnerCount: event.winnerCount,
+    ticketDesignId: event.ticketDesignId,
+    ticketListViewDefault: event.ticketListViewDefault,
+    ticketDesign: event.ticketDesign
+      ? toTicketDesignPresetDto(event.ticketDesign)
+      : null,
     status: event.status,
     publishedAt: event.publishedAt?.toISOString() ?? null,
     createdAt: event.createdAt.toISOString(),
     updatedAt: event.updatedAt.toISOString(),
   };
 }
+
+export const eventWithDesignInclude = {
+  ticketDesign: true,
+} as const;
 
 export function toEventListItem(event: Event): EventListItem {
   const dto = toEventDto(event);

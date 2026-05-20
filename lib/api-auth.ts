@@ -33,3 +33,15 @@ export function requireEventsWrite(session: Session) {
     throw new ApiError("Forbidden", 403);
   }
 }
+
+export function requireTicketsRead(session: Session) {
+  if (!hasPermission(session, PERMISSIONS.TICKETS_READ)) {
+    throw new ApiError("Forbidden", 403);
+  }
+}
+
+export function requireTicketsWrite(session: Session) {
+  if (!hasPermission(session, PERMISSIONS.TICKETS_WRITE)) {
+    throw new ApiError("Forbidden", 403);
+  }
+}

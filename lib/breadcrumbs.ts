@@ -8,9 +8,9 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
   events: "Events",
+  tickets: "Tickets",
   new: "Create event",
   edit: "Edit",
-  tickets: "Tickets",
   prizes: "Prizes",
   draws: "Lucky Draw",
   winners: "Winners",
