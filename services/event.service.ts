@@ -10,6 +10,7 @@ import { createAuditLog } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { getDefaultTicketDesignId } from "@/services/ticket-design.service";
 import type { EventFormValues } from "@/validators/events";
+import type { TicketAppearanceValues } from "@/validators/ticket-appearance";
 
 export type EventInput = EventFormValues;
 
@@ -182,6 +183,41 @@ export async function updateTenantEvent(
     action: "event.updated",
     entity: "event",
     entityId: event.id,
+  });
+
+  return toEventDto(event);
+}
+
+export async function updateTenantEventTicketAppearance(
+  tenantId: string,
+  actorId: string,
+  eventId: string,
+  input: TicketAppearanceValues
+) {
+  const existing = await prisma.event.findFirst({
+    where: { id: eventId, tenantId, deletedAt: null },
+  });
+  if (!existing) return null;
+
+  const event = await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      ticketDesignId: input.ticketDesignId,
+      ticketListViewDefault: input.ticketListViewDefault,
+    },
+    include: eventWithDesignInclude,
+  });
+
+  await createAuditLog({
+    tenantId,
+    actorId,
+    action: "event.ticket_appearance_updated",
+    entity: "event",
+    entityId: event.id,
+    metadata: {
+      ticketDesignId: input.ticketDesignId,
+      ticketListViewDefault: input.ticketListViewDefault,
+    },
   });
 
   return toEventDto(event);

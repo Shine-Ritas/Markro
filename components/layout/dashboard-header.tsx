@@ -17,6 +17,13 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   "/dashboard/events/new": "Set up a new event with schedule, tickets, and rules.",
 };
 
+function appearancePageDescription(pathname: string): string | undefined {
+  if (/\/dashboard\/events\/[^/]+\/appearance$/.test(pathname)) {
+    return "Choose a ticket card design and default list layout for this event.";
+  }
+  return undefined;
+}
+
 export type DashboardHeaderProps = {
   title?: string;
   description?: string;
@@ -46,7 +53,8 @@ export function DashboardHeader({
   const breadcrumbs = getBreadcrumbs(pathname);
   const resolvedTitle =
     title ?? breadcrumbs[breadcrumbs.length - 1]?.label ?? "Dashboard";
-  const resolvedDescription = description ?? PAGE_DESCRIPTIONS[pathname];
+  const resolvedDescription =
+    description ?? appearancePageDescription(pathname) ?? PAGE_DESCRIPTIONS[pathname];
 
   return (
     <header className="flex shrink-0 flex-col gap-3 border-b border-border px-4 py-4 sm:px-6">

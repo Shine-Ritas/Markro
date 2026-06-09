@@ -131,13 +131,14 @@
 
 - `ticket_design_presets` + `events.ticket_design_id` / `ticket_list_view_default`
 - Seed catalog: `prisma/seeds/ticket-designs.ts` (classic, minimal, glow, festive, corporate)
-- Event form: design picker + default list view
+- Ticket appearance page: `/dashboard/events/[id]/appearance` (preset + default view)
+- Event form: core fields only; link to appearance page on edit
 - Event detail: tickets panel, view switcher, **Take photo** PNG export (1:1, 4:5, 16:9)
 - `GET /api/ticket-designs`, `html-to-image` export
 
 **How to verify:**
 
-1. Edit event → pick ticket design → save
+1. Event detail → Ticket appearance → pick design → save
 2. Event detail → switch views → Take photo → Download PNG
 
 ---

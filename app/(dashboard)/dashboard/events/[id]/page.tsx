@@ -12,7 +12,7 @@ import {
   listEventPricePeriods,
   resolveCurrentPriceForEvent,
 } from "@/services/ticket.service";
-import { Calendar, MapPin, Ticket, Trophy } from "lucide-react";
+import { Calendar, MapPin, Palette, Ticket, Trophy } from "lucide-react";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -132,15 +132,24 @@ export default async function EventDetailPage({ params }: PageProps) {
         </section>
       ) : null}
 
-      {event.ticketDesign ? (
-        <section className="rounded-xl border border-border bg-card p-5">
-          <h3 className="font-heading font-semibold">Ticket design</h3>
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="flex items-center gap-2 font-heading font-semibold">
+            <Palette className="size-4 text-primary" />
+            Ticket appearance
+          </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {event.ticketDesign.name} · Default view:{" "}
+            {event.ticketDesign?.name ?? "Classic"} · Default view:{" "}
             {event.ticketListViewDefault.toLowerCase()}
           </p>
-        </section>
-      ) : null}
+        </div>
+        <Link
+          href={`/dashboard/events/${event.id}/appearance`}
+          className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium hover:bg-muted/50"
+        >
+          Customize
+        </Link>
+      </section>
 
       <EventPriceSchedule
         eventId={event.id}

@@ -19,16 +19,11 @@ import {
 } from "@/components/ui/select";
 import { eventFormSchema, type EventFormValues } from "@/validators/events";
 import { toDateInputValue, toTimeInputValue } from "@/lib/format";
-import { TicketDesignPicker } from "@/components/tickets/ticket-design-picker";
-import { TICKET_LIST_VIEW_LABELS, TICKET_LIST_VIEWS } from "@/types/ticket-designs";
-import type { TicketDesignPresetDto } from "@/types/ticket-designs";
 import type { EventDto } from "@/types/events";
-import type { TicketListView } from "@prisma/client";
 
 type EventFormProps = {
   mode: "create" | "edit";
   event?: EventDto;
-  designPresets: TicketDesignPresetDto[];
   defaultDesignId: string;
 };
 
@@ -97,12 +92,7 @@ function FormSection({
   );
 }
 
-export function EventForm({
-  mode,
-  event,
-  designPresets,
-  defaultDesignId,
-}: EventFormProps) {
+export function EventForm({ mode, event, defaultDesignId }: EventFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
@@ -118,9 +108,6 @@ export function EventForm({
   });
 
   const status = watch("status");
-  const eventName = watch("name");
-  const ticketDesignId = watch("ticketDesignId");
-  const ticketListViewDefault = watch("ticketListViewDefault");
 
   async function onSubmit(values: EventFormValues) {
     setSubmitting(true);
@@ -280,39 +267,26 @@ export function EventForm({
         </div>
       </FormSection>
 
-      <FormSection
-        title="Ticket appearance"
-        description="Card design and default list layout for this event (used when tickets go live)"
-      >
-        <TicketDesignPicker
-          presets={designPresets}
-          value={ticketDesignId ?? defaultDesignId}
-          onChange={(id) => setValue("ticketDesignId", id, { shouldValidate: true })}
-          eventName={eventName || "Your Event"}
-        />
-        <div className="space-y-2 max-w-md">
-          <Label>Default ticket list view</Label>
-          <Select
-            value={ticketListViewDefault ?? "GRID"}
-            onValueChange={(v) =>
-              setValue("ticketListViewDefault", v as TicketListView, {
-                shouldValidate: true,
-              })
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select view" />
-            </SelectTrigger>
-            <SelectContent>
-              {TICKET_LIST_VIEWS.map((view) => (
-                <SelectItem key={view} value={view}>
-                  {TICKET_LIST_VIEW_LABELS[view]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </FormSection>
+      <p className="border-b border-border py-6 text-sm text-muted-foreground">
+        {mode === "edit" && event ? (
+          <>
+            Ticket card design and list layout are on the{" "}
+            <a
+              href={`/dashboard/events/${event.id}/appearance`}
+              className="font-medium text-primary hover:underline"
+            >
+              Ticket appearance
+            </a>{" "}
+            page.
+          </>
+        ) : (
+          <>
+            After you create this event, open{" "}
+            <span className="font-medium text-foreground">Ticket appearance</span> on
+            the event page to choose a card design.
+          </>
+        )}
+      </p>
 
       <FormSection title="Rules" description="Participation rules and prize details">
         <div className="space-y-2">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, Globe, Pencil, Trash2 } from "lucide-react";
+import { Archive, Globe, Palette, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { EventDto } from "@/types/events";
@@ -41,6 +41,13 @@ export function EventDetailActions({ event, tenantSlug }: EventDetailActionsProp
 
   return (
     <div className="flex flex-wrap gap-2">
+      <Button
+        variant="outline"
+        render={<Link href={`/dashboard/events/${event.id}/appearance`} />}
+      >
+        <Palette className="size-4" />
+        Ticket appearance
+      </Button>
       <Button
         variant="outline"
         render={<Link href={`/dashboard/events/${event.id}/edit`} />}

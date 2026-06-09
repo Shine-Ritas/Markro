@@ -12,10 +12,11 @@
 
 ## Companion files (required)
 
-| File                               | Purpose                                               |
-| ---------------------------------- | ----------------------------------------------------- |
-| [`bug_report.md`](./bug_report.md) | Track bugs, regressions, and fixes per phase          |
-| [`other.md`](./other.md)           | Decisions, env notes, blockers, agent handoff context |
+| File                                             | Purpose                                               |
+| ------------------------------------------------ | ----------------------------------------------------- |
+| [`bug_report.md`](./bug_report.md)               | Track bugs, regressions, and fixes per phase          |
+| [`other.md`](./other.md)                         | Decisions, env notes, blockers, agent handoff context |
+| [`ticket-appearance.md`](./ticket-appearance.md) | Ticket card design, layouts, social export spec       |
 
 ---
 
@@ -39,48 +40,12 @@ Build a modern **multi-tenant** Lucky Draw SaaS for organizations running raffle
 
 ---
 
-## Ticket cards, layouts & social export
+## Ticket appearance
 
-> **Product requirement** spanning **Phase 4** (event settings + share UX) and **Phase 5** (ticket data + rendering).  
-> Design presets will be **added often** — architecture must support new themes without migrations every time.
+Product spec (card designs, list views, social export): **[`ticket-appearance.md`](./ticket-appearance.md)**.
 
-### Goals
-
-| Capability                  | Description                                                                                                |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **Per-event ticket design** | Each event selects a ticket card theme (border, background, typography, logo/badge placement).             |
-| **Design catalog**          | System ships multiple presets; later: tenant-uploaded assets / custom CSS tokens.                          |
-| **Flexible card views**     | Ticket list supports multiple layouts (grid cards, compact list, showcase strip, table) — user-switchable. |
-| **Take photo / export**     | Org captures a high-quality image of the ticket list (or event promo card) to post on social media.        |
-
-### Design preset fields (minimum)
-
-- Preset `slug`, `name`, preview thumbnail
-- Card: `borderStyle`, `borderColor`, `background`, `accentColor`, `fontFamily` (optional)
-- Layout hints: QR position, number prominence, event branding slot
-
-### Data model (Phase 5)
-
-- [ ] `ticket_design_presets` — seeded catalog (extensible JSON `theme` column)
-- [ ] `events.ticket_design_id` — FK, nullable → default preset
-- [ ] Optional: `events.ticket_list_view_default` — enum (`grid` \| `compact` \| `showcase` \| `table`)
-
-### UX surfaces
-
-| Surface                                                       | Phase                                  | Notes                                                                                 |
-| ------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
-| Event create/edit — **Ticket design** dropdown + live preview | 4 (picker UI) → 5 (applies to tickets) | Same section as ticket qty / winner count                                             |
-| Event detail — **View as** card layout switcher               | 4                                      | Applies to ticket list when Phase 5 exists                                            |
-| Event detail — **Take photo** button                          | 4                                      | `html-to-image` or canvas export; includes event branding; ticket grid when available |
-| Tickets page — layout switcher + design preview               | 5                                      | Renders each ticket with event’s selected design                                      |
-| Public event page — ticket showcase (optional)                | 5+                                     | Read-only branded cards                                                               |
-
-### Technical notes (for agents)
-
-- Store preset `theme` as JSON (versioned) so new designs ship via seed/migration, not code deploy only.
-- **Take photo**: client-side DOM → PNG (e.g. `html-to-image`), fixed aspect ratio options (1:1, 4:5, 16:9) for Instagram/Facebook.
-- Card view switcher state: URL query `?view=grid` or per-user localStorage; event default from DB.
-- Screenshot target: dedicated `#ticket-share-capture` wrapper with print-safe styles (no sidebar).
+- **Customize:** `/dashboard/events/[id]/appearance` (preset + default view; advanced tools later)
+- **Dev log:** changelog below + [`other.md`](./other.md)
 
 ---
 
@@ -356,7 +321,7 @@ Premium SaaS dashboard UI.
 
 > Core ticket rendering is Phase 5; event phase wires **settings + export UX** first.
 
-- [x] Event form: **Ticket design** preset selector + mini preview (saved on event; applied in Phase 5)
+- [x] **Ticket appearance** page: preset selector + default list view (`/dashboard/events/[id]/appearance`)
 - [x] Event detail: **Card view** switcher placeholder (`grid` \| `compact` \| `showcase` \| `table`) for ticket list
 - [x] Event detail / tickets tab: **Take photo** — export shareable PNG (event promo; ticket grid when Phase 5 live)
 - [x] Aspect ratio options for export (1:1, 4:5, 16:9)
@@ -379,7 +344,7 @@ Working event management + hooks for branded tickets and social sharing.
 
 **Cursor prompt:** `Implement Phase 5 from @.cursor/planning/plan.md`
 
-**Depends on:** Phase 4 ticket design picker + share UX (see [Ticket cards, layouts & social export](#ticket-cards-layouts--social-export)).
+**Depends on:** Phase 4 ticket appearance + share UX (see [`ticket-appearance.md`](./ticket-appearance.md)).
 
 ### Checklist — database
 
@@ -666,5 +631,6 @@ Requirements: beautiful, fast, scalable, mobile-responsive, multi-tenant, produc
 
 | Date       | Change                                                                                       |
 | ---------- | -------------------------------------------------------------------------------------------- |
+| 2026-05-20 | Ticket appearance spec → `ticket-appearance.md`; dedicated appearance page                   |
 | 2026-05-20 | Ticket card designs (per event), card view modes, Take photo / social export — Phase 4+5     |
 | 2026-05-20 | Restructured for Cursor phases; added Google OAuth; checklists; `bug_report.md` + `other.md` |
