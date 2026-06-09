@@ -55,7 +55,7 @@ export function TicketsAggregatedTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm" suppressHydrationWarning>
         <thead>
           <tr className="border-b border-border bg-muted/30 text-left text-muted-foreground">
             {showEventColumn ? <th className="px-4 py-3">Event</th> : null}

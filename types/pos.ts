@@ -60,3 +60,20 @@ export type PosDailyStats = {
     actorName: string | null;
   }[];
 };
+
+export type PosSalesHistorySummary = {
+  saleCount: number;
+  ticketCount: number;
+  revenueCents: number;
+};
+
+export type PosSalesHistoryResult = {
+  sales: PosSaleDto[];
+  total: number;
+  summary: PosSalesHistorySummary;
+};
+
+export type PosEventFilterOption = {
+  id: string;
+  name: string;
+};

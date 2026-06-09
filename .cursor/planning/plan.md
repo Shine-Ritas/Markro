@@ -412,14 +412,26 @@ Functional ticket system with **selectable branded card designs**, **flexible li
 - [x] Receipt generation, draft transactions
 - [x] Offline-ready architecture notes in `other.md`
 - [x] Daily sales + staff widgets
+- [x] **`/dashboard/sales`** — tenant-scoped sale list page (completed POS sales only)
+- [x] **`listTenantPosSales`** in `services/pos.service.ts` — paginated query on `pos_sales` where `status = COMPLETED`, ordered by `completedAt desc`
+- [x] **`GET /api/pos/sales/history`** — query params: `eventId`, `from`, `to`, `q` (receipt # / customer name / phone), `limit`, `offset`
+- [x] **Summary strip** — sale count, ticket count, revenue for current filter
+- [x] **Sales table** — columns: receipt #, date/time, event, customer, ticket count, total, staff; row action **View receipt**
+- [x] **Receipt detail** — reuse `PosReceiptDialog` fed by `getPosSaleById`
+- [x] **Filters** — date preset (today / 7 days / all), custom date range (from/to), event dropdown, search box
+- [x] **Sidebar nav** — add **Sales** item in `app-sidebar.tsx` (between POS and Reports)
+- [x] **POS cross-link** — "View all sales →" on `pos-client.tsx` pointing to `/dashboard/sales`
+
+> **Scope note:** Draft and cancelled sales stay on POS; Phase 9 reports will add charts/CSV export — this page is the **operational transaction list**, not analytics.
 
 ### Exit criteria
 
 - [x] Staff completes a sale with customer-chosen ticket numbers; tickets move to SOLD
+- [x] Staff can browse completed sales, filter by event/date, and reopen a receipt
 
 ### Deliverable
 
-Functional POS selling numbered tickets by explicit selection. Public online checkout will reuse the same pick-numbers model in a later phase.
+Functional POS selling numbered tickets by explicit selection **plus a completed-sales ledger at `/dashboard/sales`**. Public online checkout will reuse the same pick-numbers model in a later phase.
 
 ---
 

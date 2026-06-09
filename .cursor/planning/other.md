@@ -133,6 +133,33 @@
 
 ---
 
+#### Phase 6 — Sale list page — 2026-06-09
+
+**Completed:**
+
+- `/dashboard/sales` — completed POS sales ledger (drafts stay on POS)
+- `listTenantPosSales()` + `listPosEventFilterOptions()` in `services/pos.service.ts`
+- `GET /api/pos/sales/history` — filters: `eventId`, `from`, `to`, `q`, `limit`, `offset`; returns sales + summary counts
+- `GET /api/pos/sales/[id]` — now uses `tickets.read` (was `tickets.write`) for receipt viewing
+- `SalesListClient` — date presets (today / 7 days / all), event filter, search, summary strip, table, `PosReceiptDialog`
+- Sidebar **Sales** nav (between POS and Reports); POS **View all sales →** link
+
+**Permission:** `tickets.read` for history list and receipt view; POS write unchanged on draft/complete routes.
+
+**How to verify:**
+
+1. Sign in → complete a sale on `/dashboard/pos`
+2. Open `/dashboard/sales` — sale appears with receipt #, customer, totals
+3. Filter by today / event / search receipt or phone
+4. **View receipt** opens dialog with ticket numbers
+5. Sidebar **Sales** and POS cross-link both navigate correctly
+
+**Notes for Phase 9:**
+
+- This page is the operational transaction list; Phase 9 adds charts/CSV export on the same `pos_sales` data
+
+---
+
 #### Phase 6 — POS (pick-your-numbers) — 2026-06-09
 
 **Completed:**

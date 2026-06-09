@@ -36,3 +36,14 @@ export const posSaleUpdateSchema = z
 
 export type PosSaleDraftInput = z.infer<typeof posSaleDraftSchema>;
 export type PosSaleUpdateInput = z.infer<typeof posSaleUpdateSchema>;
+
+export const posSalesHistoryQuerySchema = z.object({
+  eventId: z.string().uuid().optional(),
+  from: z.string().trim().optional(),
+  to: z.string().trim().optional(),
+  q: z.string().trim().max(120).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+});
+
+export type PosSalesHistoryQuery = z.infer<typeof posSalesHistoryQuerySchema>;

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ShoppingCart, User } from "lucide-react";
@@ -254,10 +255,18 @@ export function PosClient({ staffName, initialEvents, initialDrafts }: PosClient
         <p className="text-sm text-muted-foreground">
           Pick lucky ticket numbers for the customer, then complete the sale.
         </p>
-        <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-sm">
-          <User className="size-4 text-primary" />
-          <span className="text-muted-foreground">Staff:</span>
-          <span className="font-medium">{staffName}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/dashboard/sales"
+            className="text-sm text-primary hover:underline"
+          >
+            View all sales →
+          </Link>
+          <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-sm">
+            <User className="size-4 text-primary" />
+            <span className="text-muted-foreground">Staff:</span>
+            <span className="font-medium">{staffName}</span>
+          </div>
         </div>
       </div>
 

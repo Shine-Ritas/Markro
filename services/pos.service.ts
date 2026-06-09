@@ -4,11 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { resolveCurrentPriceForEvent } from "@/services/ticket.service";
 import type {
   PosDailyStats,
+  PosEventFilterOption,
   PosEventOption,
   PosSaleDto,
   PosSaleLineDto,
+  PosSalesHistoryResult,
 } from "@/types/pos";
-import type { PosSaleDraftInput, PosSaleUpdateInput } from "@/validators/pos";
+import type {
+  PosSaleDraftInput,
+  PosSaleUpdateInput,
+  PosSalesHistoryQuery,
+} from "@/validators/pos";
 
 const saleInclude = {
   event: { select: { name: true, currencyCode: true } },
@@ -204,6 +210,87 @@ export async function listPosDrafts(tenantId: string) {
   });
 
   return sales.map(toPosSaleDto);
+}
+
+function buildCompletedSalesWhere(
+  tenantId: string,
+  filters: Pick<PosSalesHistoryQuery, "eventId" | "from" | "to" | "q">
+) {
+  const q = filters.q?.trim();
+
+  return {
+    tenantId,
+    status: "COMPLETED" as const,
+    ...(filters.eventId ? { eventId: filters.eventId } : {}),
+    ...(filters.from || filters.to
+      ? {
+          completedAt: {
+            ...(filters.from ? { gte: new Date(filters.from) } : {}),
+            ...(filters.to ? { lte: new Date(filters.to) } : {}),
+          },
+        }
+      : {}),
+    ...(q
+      ? {
+          OR: [
+            { receiptNumber: { contains: q, mode: "insensitive" as const } },
+            { customerName: { contains: q, mode: "insensitive" as const } },
+            { customerPhone: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+}
+
+export async function listTenantPosSales(
+  tenantId: string,
+  filters: PosSalesHistoryQuery
+): Promise<PosSalesHistoryResult> {
+  const where = buildCompletedSalesWhere(tenantId, filters);
+  const limit = filters.limit ?? 50;
+  const offset = filters.offset ?? 0;
+
+  const [sales, total, aggregates] = await Promise.all([
+    prisma.posSale.findMany({
+      where,
+      include: saleInclude,
+      orderBy: { completedAt: "desc" },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.posSale.count({ where }),
+    prisma.posSale.aggregate({
+      where,
+      _count: { _all: true },
+      _sum: { quantity: true, totalCents: true },
+    }),
+  ]);
+
+  return {
+    sales: sales.map(toPosSaleDto),
+    total,
+    summary: {
+      saleCount: aggregates._count._all,
+      ticketCount: aggregates._sum.quantity ?? 0,
+      revenueCents: aggregates._sum.totalCents ?? 0,
+    },
+  };
+}
+
+export async function listPosEventFilterOptions(
+  tenantId: string
+): Promise<PosEventFilterOption[]> {
+  const events = await prisma.event.findMany({
+    where: {
+      tenantId,
+      deletedAt: null,
+      posSales: { some: { status: "COMPLETED" } },
+    },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+
+  return events;
 }
 
 export async function getPosSaleById(tenantId: string, saleId: string) {

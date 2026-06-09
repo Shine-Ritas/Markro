@@ -194,3 +194,38 @@
     opacity: 0.55;
   }
 }
+
+@media print {
+  body.printing-receipt * {
+    visibility: hidden !important;
+  }
+
+  body.printing-receipt [data-pos-receipt-print],
+  body.printing-receipt [data-pos-receipt-print] * {
+    visibility: visible !important;
+  }
+
+  body.printing-receipt [data-pos-receipt-print] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483647 !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    padding: 16px !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body.printing-receipt [data-pos-receipt-print] .text-muted-foreground,
+  body.printing-receipt [data-pos-receipt-print] .print\:text-gray-600 {
+    color: #555 !important;
+  }
+
+  body.printing-receipt [data-pos-receipt-print] .text-primary,
+  body.printing-receipt [data-pos-receipt-print] .print\:text-black {
+    color: #111 !important;
+  }
+}

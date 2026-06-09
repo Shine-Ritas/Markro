@@ -124,7 +124,7 @@ export function EventTicketsPanel({ event, tenantName }: EventTicketsPanelProps)
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" suppressHydrationWarning>
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-left text-muted-foreground">
                   <th className="px-4 py-2">Number</th>

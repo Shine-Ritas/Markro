@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { ApiError, requireApiSession, requireTicketsWrite } from "@/lib/api-auth";
+import {
+  ApiError,
+  requireApiSession,
+  requireTicketsRead,
+  requireTicketsWrite,
+} from "@/lib/api-auth";
 import { cancelPosDraft, getPosSaleById, updatePosDraft } from "@/services/pos.service";
 import { posSaleUpdateSchema } from "@/validators/pos";
 
@@ -8,7 +13,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const session = await requireApiSession();
-    requireTicketsWrite(session);
+    requireTicketsRead(session);
     const { id } = await context.params;
 
     const sale = await getPosSaleById(session.user.tenantId!, id);
