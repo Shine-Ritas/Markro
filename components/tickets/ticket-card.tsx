@@ -11,6 +11,7 @@ type TicketCardProps = {
   ticket: TicketDto;
   eventName: string;
   theme: TicketDesignTheme;
+  currencyCode?: string | null;
   onClick?: () => void;
   compact?: boolean;
 };
@@ -19,6 +20,7 @@ export function TicketCard({
   ticket,
   eventName,
   theme,
+  currencyCode,
   onClick,
   compact,
 }: TicketCardProps) {
@@ -32,7 +34,7 @@ export function TicketCard({
       />
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-sm font-semibold text-primary">
-          {formatMoney(ticket.priceCents)}
+          {formatMoney(ticket.priceCents, currencyCode ?? ticket.currencyCode)}
         </span>
         <TicketStatusBadge status={ticket.status} />
       </div>

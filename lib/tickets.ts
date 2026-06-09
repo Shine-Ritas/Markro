@@ -2,10 +2,17 @@ import type { Ticket, TicketPricePeriod, TicketType } from "@prisma/client";
 import type { TicketDto, TicketPricePeriodDto, TicketTypeDto } from "@/types/tickets";
 import { randomBytes } from "crypto";
 
-export function formatMoney(cents: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", {
+export function formatMoney(cents: number, currencyCode?: string | null) {
+  if (!currencyCode) {
+    return (cents / 100).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  return new Intl.NumberFormat(undefined, {
     style: "currency",
-    currency,
+    currency: currencyCode,
   }).format(cents / 100);
 }
 

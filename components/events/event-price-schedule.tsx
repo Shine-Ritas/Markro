@@ -15,12 +15,14 @@ type EventPriceScheduleProps = {
   eventId: string;
   periods: TicketPricePeriodDto[];
   currentPriceCents: number | null;
+  currencyCode: string | null;
 };
 
 export function EventPriceSchedule({
   eventId,
   periods,
   currentPriceCents,
+  currencyCode,
 }: EventPriceScheduleProps) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
@@ -89,7 +91,7 @@ export function EventPriceSchedule({
             <p className="mt-2 text-sm">
               Current price:{" "}
               <span className="font-semibold text-primary">
-                {formatMoney(currentPriceCents)}
+                {formatMoney(currentPriceCents, currencyCode)}
               </span>
             </p>
           ) : (
@@ -118,7 +120,8 @@ export function EventPriceSchedule({
             >
               <div>
                 <p className="font-medium">
-                  {p.label ?? "Price period"} · {formatMoney(p.priceCents)}
+                  {p.label ?? "Price period"} ·{" "}
+                  {formatMoney(p.priceCents, currencyCode)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {formatDate(p.startsAt)}
@@ -138,7 +141,8 @@ export function EventPriceSchedule({
         </ul>
       ) : (
         <p className="mt-4 text-sm text-muted-foreground">
-          No price periods yet. Example: $10 from the 1st–15th, $15 from the 16th–31st.
+          No price periods yet. Example: 10.00 from the 1st–15th, 15.00 from the
+          16th–31st.
         </p>
       )}
 
@@ -156,7 +160,7 @@ export function EventPriceSchedule({
             />
           </div>
           <div className="space-y-2">
-            <Label>Price (USD)</Label>
+            <Label>Price{currencyCode ? ` (${currencyCode})` : ""}</Label>
             <Input
               type="number"
               min={0}

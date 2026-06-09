@@ -12,6 +12,8 @@ import type {
   GenerateTicketsInput,
   TicketPricePeriodInput,
 } from "@/validators/tickets";
+import type { TicketSummary } from "@/types/tickets";
+import type { TicketTableGroup } from "@/lib/ticket-groups";
 
 const ticketInclude = { ticketType: true } as const;
 
@@ -105,7 +107,12 @@ async function nextTicketNumbers(eventId: string, count: number) {
 export async function listEventTickets(
   tenantId: string,
   eventId: string,
-  options?: { status?: TicketStatus; search?: string }
+  options?: {
+    status?: TicketStatus;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }
 ) {
   const where: Prisma.TicketWhereInput = {
     tenantId,
@@ -121,6 +128,8 @@ export async function listEventTickets(
     where,
     include: ticketInclude,
     orderBy: { ticketNumber: "asc" },
+    ...(options?.limit !== undefined ? { take: options.limit } : {}),
+    ...(options?.offset !== undefined ? { skip: options.offset } : {}),
   });
 
   return tickets.map(toTicketDto);
@@ -314,6 +323,118 @@ export async function validateTicketByQrToken(
   };
 }
 
+const emptyStatusCounts = (): Record<TicketStatus, number> => ({
+  AVAILABLE: 0,
+  SOLD: 0,
+  VALIDATED: 0,
+  CANCELLED: 0,
+});
+
+export async function getTenantTicketSummary(tenantId: string): Promise<TicketSummary> {
+  const where = { tenantId, deletedAt: null };
+
+  const [total, statusGroups, priceGroups] = await Promise.all([
+    prisma.ticket.count({ where }),
+    prisma.ticket.groupBy({
+      by: ["status"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.ticket.groupBy({
+      by: ["priceCents"],
+      where,
+      _count: { _all: true },
+      orderBy: { priceCents: "asc" },
+    }),
+  ]);
+
+  const byStatus = emptyStatusCounts();
+  for (const group of statusGroups) {
+    byStatus[group.status] = group._count._all;
+  }
+
+  return {
+    total,
+    byStatus,
+    byPrice: priceGroups.map((g) => ({
+      priceCents: g.priceCents,
+      count: g._count._all,
+    })),
+  };
+}
+
+export async function listTenantTicketTableGroups(
+  tenantId: string
+): Promise<TicketTableGroup[]> {
+  const where = { tenantId, deletedAt: null };
+
+  const rows = await prisma.ticket.groupBy({
+    by: ["eventId", "ticketTypeId", "priceCents", "status"],
+    where,
+    _count: { _all: true },
+  });
+
+  if (rows.length === 0) return [];
+
+  const eventIds = [...new Set(rows.map((r) => r.eventId))];
+  const ticketTypeIds = [
+    ...new Set(
+      rows.map((r) => r.ticketTypeId).filter((id): id is string => id !== null)
+    ),
+  ];
+
+  const [events, ticketTypes] = await Promise.all([
+    prisma.event.findMany({
+      where: { id: { in: eventIds } },
+      select: { id: true, name: true, currencyCode: true },
+    }),
+    ticketTypeIds.length > 0
+      ? prisma.ticketType.findMany({
+          where: { id: { in: ticketTypeIds } },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const eventNames = new Map(events.map((e) => [e.id, e.name]));
+  const eventCurrencies = new Map(events.map((e) => [e.id, e.currencyCode]));
+  const typeNames = new Map(ticketTypes.map((t) => [t.id, t.name]));
+
+  const groups = new Map<string, TicketTableGroup>();
+
+  for (const row of rows) {
+    const key = `${row.eventId}|${row.ticketTypeId ?? "none"}|${row.priceCents}`;
+    let group = groups.get(key);
+
+    if (!group) {
+      group = {
+        eventId: row.eventId,
+        eventName: eventNames.get(row.eventId) ?? "Unknown event",
+        currencyCode: eventCurrencies.get(row.eventId) ?? null,
+        ticketTypeId: row.ticketTypeId,
+        ticketTypeName: row.ticketTypeId
+          ? (typeNames.get(row.ticketTypeId) ?? "Standard")
+          : "Standard",
+        priceCents: row.priceCents,
+        total: 0,
+        byStatus: emptyStatusCounts(),
+      };
+      groups.set(key, group);
+    }
+
+    group.total += row._count._all;
+    group.byStatus[row.status] = row._count._all;
+  }
+
+  return Array.from(groups.values()).sort((a, b) => {
+    const eventCompare = a.eventName.localeCompare(b.eventName);
+    if (eventCompare !== 0) return eventCompare;
+    const typeCompare = a.ticketTypeName.localeCompare(b.ticketTypeName);
+    if (typeCompare !== 0) return typeCompare;
+    return a.priceCents - b.priceCents;
+  });
+}
+
 export async function listTenantTickets(
   tenantId: string,
   options?: { eventId?: string; limit?: number }
@@ -328,7 +449,7 @@ export async function listTenantTickets(
       ...ticketInclude,
       event: { select: { id: true, name: true, slug: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ priceCents: "asc" }, { ticketNumber: "asc" }],
     take: options?.limit ?? 100,
   });
 

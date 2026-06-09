@@ -14,6 +14,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   "/dashboard": "Welcome back! Here's what's happening with your events.",
   "/dashboard/events": "Create and manage lucky draw events for your organization.",
   "/dashboard/tickets": "View and validate tickets across all events.",
+  "/dashboard/pos": "Sell tickets at the counter — tablet-friendly POS checkout.",
   "/dashboard/events/new": "Set up a new event with schedule, tickets, and rules.",
 };
 

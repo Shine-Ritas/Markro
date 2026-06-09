@@ -8,6 +8,7 @@ export type TicketDto = {
   ticketTypeName: string | null;
   ticketNumber: string;
   priceCents: number;
+  currencyCode?: string | null;
   status: TicketStatus;
   qrToken: string;
   soldAt: string | null;
@@ -40,6 +41,17 @@ export type TicketValidationResult = {
   duplicate?: boolean;
   ticket?: TicketDto;
   message: string;
+};
+
+export type TenantTicketListItem = TicketDto & {
+  eventName: string;
+  eventSlug: string;
+};
+
+export type TicketSummary = {
+  total: number;
+  byStatus: Record<TicketStatus, number>;
+  byPrice: { priceCents: number; count: number }[];
 };
 
 export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {

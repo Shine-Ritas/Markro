@@ -21,9 +21,9 @@
 
 | Field            | Value                                              |
 | ---------------- | -------------------------------------------------- |
-| **Active phase** | Phase 5 complete                                   |
-| **Last updated** | 2026-05-20                                         |
-| **Next action**  | `Implement Phase 6 from @.cursor/planning/plan.md` |
+| **Active phase** | Phase 6 complete                                   |
+| **Last updated** | 2026-06-09                                         |
+| **Next action**  | `Implement Phase 7 from @.cursor/planning/plan.md` |
 
 ---
 
@@ -41,6 +41,9 @@
 | `AUTH_GOOGLE_ID`                  | Google OAuth client ID                     | 2     |
 | `AUTH_GOOGLE_SECRET`              | Google OAuth client secret                 | 2     |
 | `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED` | Set `true` when Google OAuth is configured | 2     |
+| `STORAGE_PROVIDER`                | `local` (dev) or `s3` (cloud)              | —     |
+| `STORAGE_S3_*`                    | S3-compatible bucket credentials           | —     |
+| `IMAGE_UPLOAD_MAX_BYTES`          | Max image upload size (default 5MB)        | —     |
 
 ### Google OAuth setup (Phase 2)
 
@@ -67,19 +70,24 @@
 
 ## Architecture decisions
 
-| Date       | Decision                                        | Rationale                                                                                        |
-| ---------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 2026-05-20 | Auth.js v5 for email + Google                   | Single session model, Prisma adapter, OAuth account linking                                      |
-| 2026-05-20 | Google OAuth in Phase 2                         | Social login required early; same phase as credentials                                           |
-| 2026-05-20 | No payment gateways until future phase          | Per product scope                                                                                |
-| 2026-05-20 | Prisma 6.x (not 7)                              | Prisma 7 requires `prisma.config.ts`; v6 matches standard Next.js tutorials until Phase 2 schema |
-| 2026-05-20 | shadcn base-nova + Base UI                      | Dialog/Sheet/Dropdown use `@base-ui/react` render prop API                                       |
-| 2026-05-20 | Violet primary accent                           | Brand color in `app/globals.css` oklch hue ~285                                                  |
-| 2026-05-20 | JWT sessions + Prisma adapter                   | Credentials provider requires JWT; adapter stores OAuth accounts                                 |
-| 2026-05-20 | `allowDangerousEmailAccountLinking`             | Links Google to existing email/password users                                                    |
-| 2026-05-20 | Design reference in `.cursor/design-reference/` | Single source for UI mockups; dark LuckyDraw Pro theme applied before Phase 3                    |
-| 2026-05-20 | Ticket designs = JSON presets + per-event FK    | New card themes ship via seed/catalog; `events.ticket_design_id`; borders + full card in `theme` |
-| 2026-05-20 | Ticket list views + Take photo export           | `grid` / `compact` / `showcase` / `table`; PNG via client capture for social sharing             |
+| Date       | Decision                                        | Rationale                                                                                                         |
+| ---------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 2026-05-20 | Auth.js v5 for email + Google                   | Single session model, Prisma adapter, OAuth account linking                                                       |
+| 2026-05-20 | Google OAuth in Phase 2                         | Social login required early; same phase as credentials                                                            |
+| 2026-05-20 | No payment gateways until future phase          | Per product scope                                                                                                 |
+| 2026-05-20 | Prisma 6.x (not 7)                              | Prisma 7 requires `prisma.config.ts`; v6 matches standard Next.js tutorials until Phase 2 schema                  |
+| 2026-05-20 | shadcn base-nova + Base UI                      | Dialog/Sheet/Dropdown use `@base-ui/react` render prop API                                                        |
+| 2026-05-20 | Violet primary accent                           | Brand color in `app/globals.css` oklch hue ~285                                                                   |
+| 2026-05-20 | JWT sessions + Prisma adapter                   | Credentials provider requires JWT; adapter stores OAuth accounts                                                  |
+| 2026-05-20 | `allowDangerousEmailAccountLinking`             | Links Google to existing email/password users                                                                     |
+| 2026-05-20 | Design reference in `.cursor/design-reference/` | Single source for UI mockups; dark LuckyDraw Pro theme applied before Phase 3                                     |
+| 2026-05-20 | Ticket designs = JSON presets + per-event FK    | New card themes ship via seed/catalog; `events.ticket_design_id`; borders + full card in `theme`                  |
+| 2026-05-20 | Ticket list views + Take photo export           | `grid` / `compact` / `showcase` / `table`; PNG via client capture for social sharing                              |
+| 2026-06-09 | Swappable image storage (`lib/storage`)         | `STORAGE_PROVIDER=local                                                                                           | s3`; features use `image-upload.service`; yearly vendor swap = env only |
+| 2026-06-09 | POS sales as `pos_sales` + `pos_sale_lines`     | Draft lines hold selected ticket IDs; complete sells those exact numbers, marks SOLD, receipt `RCP-YYYYMMDD-####` |
+| 2026-06-09 | Per-event ISO currency (`events.currency_code`) | No USD default; event form picks code (THB, EUR, …); `formatMoney(cents, event.currencyCode)` via Intl            |
+| 2026-06-09 | POS pick-your-numbers (Phase 6 replan)          | Staff/customer chooses specific lucky numbers + name/phone; `GET /api/pos/events/[id]/tickets` for picker         |
+| 2026-06-09 | POS offline-ready (Phase 6 notes only)          | See handoff below; full offline sync deferred — use drafts API + idempotent complete when online                  |
 
 ---
 
@@ -122,6 +130,64 @@
 
 -
 ```
+
+---
+
+#### Phase 6 — POS (pick-your-numbers) — 2026-06-09
+
+**Completed:**
+
+- Schema: `pos_sales`, `pos_sale_lines`, `PosSaleStatus` (DRAFT / COMPLETED / CANCELLED)
+- `services/pos.service.ts` — events, available-ticket list, drafts with explicit `ticketIds`, complete sale, daily stats
+- APIs: `/api/pos/events`, `/api/pos/events/[eventId]/tickets`, `/api/pos/stats/today`, `/api/pos/sales`, complete/cancel
+- `/dashboard/pos` tablet UI: event picker, **ticket number grid/search**, cart with selected numbers, customer name + phone (required), drafts, receipt dialog
+- Daily sales widgets + staff name; sidebar POS enabled
+
+**POS flow:**
+
+```
+Select event → pick ticket numbers (grid/search/quick-add) → customer name + phone → Complete sale → receipt
+```
+
+Draft `pos_sale_lines` store selected ticket IDs before complete. Complete validates tickets are still `AVAILABLE` and marks them `SOLD`.
+
+**Offline-ready architecture (notes, not implemented):**
+
+1. **Draft-first:** POS saves `DRAFT` sales with selected `ticketIds` server-side; client can queue sync when connectivity returns.
+2. **Idempotent complete:** Pass client `Idempotency-Key` header on `POST .../complete` (follow-up) to avoid duplicate sales.
+3. **Local cache:** Store `eventId`, `ticketIds`, customer fields in `localStorage` keyed by draft id; sync on `online` event.
+4. **Inventory:** No `HELD` status yet — two drafts may overlap; second complete fails if a number was sold.
+5. **Phase 8 customers:** Replace free-text `customerName` with `customers` FK when customer module ships.
+
+**How to verify:**
+
+1. Sign in → `/dashboard/pos`
+2. Select published event with available tickets
+3. Pick specific numbers (search or grid) → enter name + phone → **Complete sale**
+4. Receipt lists exact ticket numbers; tickets move to SOLD on event detail
+5. **Save draft** → resume from draft list → complete later
+
+**Notes for Phase 7:**
+
+- POS sells pre-generated numbered tickets only; draw engine is separate
+- Public online buy flow will reuse pick-numbers UX in a later phase
+
+---
+
+#### Tickets dashboard enhancements — 2026-06-09
+
+**Completed:**
+
+- `/dashboard/tickets`: total ticket count, status breakdown, price-group summaries
+- Aggregated table: Event, Ticket type, Total tickets, Price, Status (badge + count per group), Action
+- Event detail **Table** view uses the same aggregated layout
+- `getTenantTicketSummary` in `ticket.service.ts`
+
+**How to verify:**
+
+1. Sign in → `/dashboard/tickets` with generated tickets
+2. Confirm summary cards, status counts, and price chips match table data
+3. **View** opens QR dialog; **Modify** navigates to event detail
 
 ---
 

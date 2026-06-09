@@ -38,6 +38,7 @@ export function toEventDto(event: EventWithDesign): EventDto {
     winnerCount: event.winnerCount,
     ticketDesignId: event.ticketDesignId,
     ticketListViewDefault: event.ticketListViewDefault,
+    currencyCode: event.currencyCode,
     ticketDesign: event.ticketDesign
       ? toTicketDesignPresetDto(event.ticketDesign)
       : null,

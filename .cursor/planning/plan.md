@@ -22,7 +22,7 @@
 
 ## Project goal
 
-Build a modern **multi-tenant** Lucky Draw SaaS for organizations running raffles, lucky draws, lotteries, giveaways, and ticket-selling events.
+Build a modern **multi-tenant** Lucky Draw SaaS for organizations running **online lucky draw events** where customers buy **numbered tickets** and often choose **specific lucky numbers** (not random allocation). Ticket amounts are stored as `priceCents`; each event sets its own **ISO `currencyCode`** for display (no global USD default).
 
 ### Out of scope (for now)
 
@@ -58,7 +58,7 @@ Product spec (card designs, list views, social export): **[`ticket-appearance.md
 | 3     | Dashboard & layout             | `[x]` Done        |
 | 4     | Event management               | `[x]` Done        |
 | 5     | Ticket management              | `[x]` Done        |
-| 6     | POS system                     | `[ ]` Not started |
+| 6     | POS system                     | `[x]` Done        |
 | 7     | Lucky draw engine              | `[ ]` Not started |
 | 8     | Customer management            | `[ ]` Not started |
 | 9     | Analytics & reporting          | `[ ]` Not started |
@@ -357,6 +357,7 @@ Working event management + hooks for branded tickets and social sharing.
 - [x] Periods with `startsAt` / `endsAt` and `priceCents` (e.g. early vs late month)
 - [x] Each ticket snapshots `priceCents` at generation
 - [x] Active price resolved for current date when generating
+- [x] Per-event `currencyCode` (ISO 4217) on `events`; `formatMoney(cents, event.currencyCode)` — no USD default
 
 ### Checklist — design catalog
 
@@ -376,7 +377,7 @@ Working event management + hooks for branded tickets and social sharing.
 - [x] Ticket cards + grid / compact / showcase / table views
 - [x] QR modal; validate API; duplicate scan blocked
 - [x] Take photo export on event tickets
-- [x] Price schedule UI on event detail; `/dashboard/tickets`
+- [x] Price schedule UI on event detail; `/dashboard/tickets` (summary, price groups, status counts, View/Modify actions)
 
 ### Checklist — card view options (reference)
 
@@ -405,19 +406,20 @@ Functional ticket system with **selectable branded card designs**, **flexible li
 
 ### Checklist
 
-- [ ] Tablet-friendly POS layout
-- [ ] Sell tickets, quantity, customer assignment
-- [ ] Receipt generation, draft transactions
-- [ ] Offline-ready architecture notes in `other.md`
-- [ ] Daily sales + staff widgets
+- [x] Tablet-friendly POS layout
+- [x] Pick specific ticket numbers (lucky numbers) + customer info (name, phone required)
+- [x] Ticket number search/grid picker; draft lines store selected numbers
+- [x] Receipt generation, draft transactions
+- [x] Offline-ready architecture notes in `other.md`
+- [x] Daily sales + staff widgets
 
 ### Exit criteria
 
-- [ ] POS flow completes a sale and creates tickets
+- [x] Staff completes a sale with customer-chosen ticket numbers; tickets move to SOLD
 
 ### Deliverable
 
-Functional POS selling.
+Functional POS selling numbered tickets by explicit selection. Public online checkout will reuse the same pick-numbers model in a later phase.
 
 ---
 

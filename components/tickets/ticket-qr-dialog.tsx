@@ -18,6 +18,7 @@ import type { TicketDto } from "@/types/tickets";
 type TicketQrDialogProps = {
   ticket: TicketDto | null;
   eventName: string;
+  currencyCode?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTicketUpdated?: (ticket: TicketDto) => void;
@@ -26,6 +27,7 @@ type TicketQrDialogProps = {
 export function TicketQrDialog({
   ticket,
   eventName,
+  currencyCode,
   open,
   onOpenChange,
   onTicketUpdated,
@@ -81,7 +83,9 @@ export function TicketQrDialog({
           )}
           <div className="text-center text-sm">
             <p className="font-medium">{eventName}</p>
-            <p className="text-primary">{formatMoney(ticket.priceCents)}</p>
+            <p className="text-primary">
+              {formatMoney(ticket.priceCents, currencyCode ?? ticket.currencyCode)}
+            </p>
             <div className="mt-2 flex justify-center">
               <TicketStatusBadge status={ticket.status} />
             </div>

@@ -155,6 +155,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         eventId={event.id}
         periods={periods}
         currentPriceCents={currentPriceCents}
+        currencyCode={event.currencyCode}
       />
 
       <EventTicketsManager

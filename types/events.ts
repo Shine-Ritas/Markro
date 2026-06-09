@@ -17,6 +17,7 @@ export type EventDto = {
   winnerCount: number;
   ticketDesignId: string | null;
   ticketListViewDefault: TicketListView;
+  currencyCode: string | null;
   ticketDesign: TicketDesignPresetDto | null;
   status: EventStatus;
   publishedAt: string | null;

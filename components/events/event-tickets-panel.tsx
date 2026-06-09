@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Camera, LayoutGrid, List, Rows3, Table2 } from "lucide-react";
-import { toPng } from "html-to-image";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +15,7 @@ import { EventShareCapture } from "@/components/events/event-share-capture";
 import { cn } from "@/lib/utils";
 import { parseTicketDesignTheme } from "@/lib/ticket-designs";
 import {
+  MAX_SHARE_TICKET_COUNT,
   SHARE_ASPECT_RATIOS,
   TICKET_LIST_VIEW_LABELS,
   type ShareAspectRatio,
@@ -31,9 +30,12 @@ const VIEW_ICONS: Record<TicketListView, typeof LayoutGrid> = {
   TABLE: Table2,
 };
 
-function buildMockTickets(quantity: number, max = 6) {
-  const count = Math.min(Math.max(quantity, 3), max);
-  return Array.from({ length: count }, (_, i) => String(i + 1).padStart(4, "0"));
+function buildMockShareTickets(quantity: number) {
+  const count = Math.min(Math.max(quantity, 3), MAX_SHARE_TICKET_COUNT);
+  return Array.from({ length: count }, (_, i) => ({
+    number: String(i + 1).padStart(4, "0"),
+    priceCents: 0,
+  }));
 }
 
 type EventTicketsPanelProps = {
@@ -44,50 +46,17 @@ type EventTicketsPanelProps = {
 export function EventTicketsPanel({ event, tenantName }: EventTicketsPanelProps) {
   const [listView, setListView] = useState<TicketListView>(event.ticketListViewDefault);
   const [aspectRatio, setAspectRatio] = useState<ShareAspectRatio>("4:5");
-  const [exporting, setExporting] = useState(false);
-  const captureRef = useRef<HTMLDivElement>(null);
 
   const theme = parseTicketDesignTheme(event.ticketDesign?.theme ?? {});
   const designName = event.ticketDesign?.name ?? "Classic";
   const mockTickets = useMemo(
-    () => buildMockTickets(event.ticketQuantity),
+    () => buildMockShareTickets(event.ticketQuantity).map((t) => t.number),
     [event.ticketQuantity]
   );
-
-  async function handleTakePhoto() {
-    const node = captureRef.current?.querySelector("#event-share-capture");
-    if (!node || !(node instanceof HTMLElement)) {
-      toast.error("Capture area not ready");
-      return;
-    }
-
-    setExporting(true);
-    try {
-      const ratio = SHARE_ASPECT_RATIOS.find((r) => r.id === aspectRatio)!;
-      const dataUrl = await toPng(node, {
-        pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: "#0f0f14",
-        width: ratio.width,
-        height: ratio.height,
-        style: {
-          width: `${ratio.width}px`,
-          height: `${ratio.height}px`,
-        },
-      });
-
-      const link = document.createElement("a");
-      link.download = `${event.slug}-share-${aspectRatio.replace(":", "x")}.png`;
-      link.href = dataUrl;
-      link.click();
-      toast.success("Image downloaded — ready to share!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to export image");
-    } finally {
-      setExporting(false);
-    }
-  }
+  const shareTickets = useMemo(
+    () => buildMockShareTickets(event.ticketQuantity),
+    [event.ticketQuantity]
+  );
 
   return (
     <section className="rounded-xl border border-border bg-card/30 p-5">
@@ -189,12 +158,13 @@ export function EventTicketsPanel({ event, tenantName }: EventTicketsPanelProps)
               </Button>
             }
           />
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-h-[92vh] w-[min(96vw,56rem)] max-w-[min(96vw,56rem)] overflow-y-auto overflow-x-hidden sm:max-w-[min(96vw,56rem)]">
             <DialogHeader>
-              <DialogTitle>Export for social media</DialogTitle>
+              <DialogTitle>Share preview</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Preview your event promo with ticket styling. Download as PNG.
+              Full-width promo with up to {MAX_SHARE_TICKET_COUNT} tickets. Screenshot
+              this view to share on social media.
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -215,10 +185,7 @@ export function EventTicketsPanel({ event, tenantName }: EventTicketsPanelProps)
               ))}
             </div>
 
-            <div
-              ref={captureRef}
-              className="flex justify-center overflow-auto rounded-lg border border-dashed border-border bg-background p-4"
-            >
+            <div className="w-full min-w-0">
               <EventShareCapture
                 eventName={event.name}
                 tenantName={tenantName}
@@ -227,18 +194,11 @@ export function EventTicketsPanel({ event, tenantName }: EventTicketsPanelProps)
                 ticketQuantity={event.ticketQuantity}
                 winnerCount={event.winnerCount}
                 bannerUrl={event.bannerUrl}
-                designName={designName}
                 theme={theme}
-                listView={listView}
                 aspectRatio={aspectRatio}
-                mockTicketNumbers={mockTickets}
+                tickets={shareTickets}
+                currencyCode={event.currencyCode}
               />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button type="button" onClick={handleTakePhoto} disabled={exporting}>
-                {exporting ? "Exporting…" : "Download PNG"}
-              </Button>
             </div>
           </DialogContent>
         </Dialog>

@@ -58,6 +58,7 @@ function mapFormToData(input: EventInput) {
     winnerCount: input.winnerCount,
     ticketDesignId: input.ticketDesignId ?? undefined,
     ticketListViewDefault: (input.ticketListViewDefault ?? "GRID") as TicketListView,
+    currencyCode: input.currencyCode,
     status: input.status,
   };
 }

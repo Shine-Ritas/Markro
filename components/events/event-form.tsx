@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { eventFormSchema, type EventFormValues } from "@/validators/events";
+import { CURRENCY_OPTIONS } from "@/lib/currencies";
 import { toDateInputValue, toTimeInputValue } from "@/lib/format";
 import type { EventDto } from "@/types/events";
 
@@ -48,6 +49,7 @@ function defaultValues(
       winnerCount: 1,
       ticketDesignId: defaultDesignId,
       ticketListViewDefault: "GRID",
+      currencyCode: "THB",
       status: "DRAFT",
     };
   }
@@ -68,6 +70,7 @@ function defaultValues(
     winnerCount: event.winnerCount,
     ticketDesignId: event.ticketDesignId ?? defaultDesignId,
     ticketListViewDefault: event.ticketListViewDefault,
+    currencyCode: event.currencyCode ?? "THB",
     status: event.status,
   };
 }
@@ -108,6 +111,7 @@ export function EventForm({ mode, event, defaultDesignId }: EventFormProps) {
   });
 
   const status = watch("status");
+  const currencyCode = watch("currencyCode");
 
   async function onSubmit(values: EventFormValues) {
     setSubmitting(true);
@@ -179,6 +183,31 @@ export function EventForm({ mode, event, defaultDesignId }: EventFormProps) {
             placeholder="Bangkok Convention Center"
             {...register("venue")}
           />
+        </div>
+        <div className="space-y-2 max-w-md">
+          <Label>Currency</Label>
+          <Select
+            value={currencyCode}
+            onValueChange={(v) =>
+              setValue("currencyCode", v as EventFormValues["currencyCode"], {
+                shouldValidate: true,
+              })
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCY_OPTIONS.map((option) => (
+                <SelectItem key={option.code} value={option.code}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.currencyCode ? (
+            <p className="text-sm text-destructive">{errors.currencyCode.message}</p>
+          ) : null}
         </div>
       </FormSection>
 

@@ -1,6 +1,13 @@
 import { z } from "zod";
+import { CURRENCY_CODES } from "@/lib/currencies";
 
 export const eventStatusSchema = z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]);
+
+export const currencyCodeSchema = z
+  .string()
+  .length(3)
+  .regex(/^[A-Z]{3}$/, "Invalid currency code")
+  .refine((code) => CURRENCY_CODES.includes(code), "Unsupported currency code");
 
 export const ticketListViewSchema = z.enum(["GRID", "COMPACT", "SHOWCASE", "TABLE"]);
 
@@ -28,6 +35,7 @@ export const eventFormSchema = z
     winnerCount: z.number().int().min(1).max(10_000),
     ticketDesignId: z.string().uuid().optional().nullable(),
     ticketListViewDefault: ticketListViewSchema.optional(),
+    currencyCode: currencyCodeSchema,
     status: eventStatusSchema.optional(),
   })
   .refine(

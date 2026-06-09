@@ -40,6 +40,9 @@ export const TICKET_LIST_VIEW_LABELS: Record<TicketListView, string> = {
 
 export type ShareAspectRatio = "1:1" | "4:5" | "16:9";
 
+/** Max ticket cards shown on social share exports */
+export const MAX_SHARE_TICKET_COUNT = 12;
+
 export const SHARE_ASPECT_RATIOS: {
   id: ShareAspectRatio;
   label: string;

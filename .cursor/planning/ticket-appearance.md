@@ -46,13 +46,13 @@ Seed location: `prisma/seeds/ticket-designs.ts`
 
 ## UX surfaces
 
-| Surface                              | Status | Route / location                                            |
-| ------------------------------------ | ------ | ----------------------------------------------------------- |
-| **Ticket appearance** (dedicated)    | Done   | `/dashboard/events/[id]/appearance` — preset + default view |
-| Event create/edit (core fields only) | Done   | Design defaults on create; customize on appearance page     |
-| Event detail — tickets + share       | Done   | View switcher, **Take photo**, branded cards                |
-| Tickets dashboard                    | Done   | `/dashboard/tickets` — layout + design from event           |
-| Public event page (optional)         | Later  | Read-only branded cards                                     |
+| Surface                              | Status | Route / location                                                                                                  |
+| ------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------- |
+| **Ticket appearance** (dedicated)    | Done   | `/dashboard/events/[id]/appearance` — preset + default view                                                       |
+| Event create/edit (core fields only) | Done   | Design defaults on create; customize on appearance page                                                           |
+| Event detail — tickets + share       | Done   | View switcher, **Take photo**, branded cards                                                                      |
+| Tickets dashboard                    | Done   | `/dashboard/tickets` — aggregated table: Event, Ticket type, Total tickets, Price, Status (badge + count), Action |
+| Public event page (optional)         | Later  | Read-only branded cards                                                                                           |
 
 ---
 
@@ -73,7 +73,7 @@ Seed location: `prisma/seeds/ticket-designs.ts`
 ## Technical notes
 
 - Preset `theme` is versioned JSON — new designs via seed, not only code deploy.
-- **Take photo**: `html-to-image`, aspect ratios 1:1, 4:5, 16:9; target `#ticket-share-capture`.
+- **Take photo**: full-width share preview (`#event-share-capture`); screenshot to share; aspect ratios 1:1, 4:5, 16:9 adjust grid layout.
 - API: `GET /api/ticket-designs`, `PATCH /api/events/[id]/appearance`.
 - Screenshot wrapper: print-safe styles, no sidebar.
 

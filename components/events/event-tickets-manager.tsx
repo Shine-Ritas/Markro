@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Camera,
+  Filter,
   LayoutGrid,
   List,
   Loader2,
@@ -11,12 +12,19 @@ import {
   Rows3,
   ScanLine,
   Table2,
+  X,
 } from "lucide-react";
-import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -27,18 +35,21 @@ import {
 import { TicketCard } from "@/components/tickets/ticket-card";
 import { TicketQrDialog } from "@/components/tickets/ticket-qr-dialog";
 import { TicketStatusBadge } from "@/components/tickets/ticket-status-badge";
+import { TicketsAggregatedTable } from "@/components/tickets/tickets-aggregated-table";
+import { groupTicketsForTable } from "@/lib/ticket-groups";
 import { EventShareCapture } from "@/components/events/event-share-capture";
 import { cn } from "@/lib/utils";
 import { parseTicketDesignTheme } from "@/lib/ticket-designs";
 import { formatMoney } from "@/lib/tickets";
 import {
+  MAX_SHARE_TICKET_COUNT,
   SHARE_ASPECT_RATIOS,
   TICKET_LIST_VIEW_LABELS,
   type ShareAspectRatio,
 } from "@/types/ticket-designs";
 import type { EventDto } from "@/types/events";
-import type { TicketDto } from "@/types/tickets";
-import type { TicketListView } from "@prisma/client";
+import { TICKET_STATUS_LABELS, type TicketDto } from "@/types/tickets";
+import type { TicketListView, TicketStatus } from "@prisma/client";
 
 const VIEW_ICONS: Record<TicketListView, typeof LayoutGrid> = {
   GRID: LayoutGrid,
@@ -70,8 +81,8 @@ export function EventTicketsManager({
   const [validateToken, setValidateToken] = useState("");
   const [validating, setValidating] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<ShareAspectRatio>("4:5");
-  const [exporting, setExporting] = useState(false);
-  const captureRef = useRef<HTMLDivElement>(null);
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | "ALL">("ALL");
+  const [priceFilter, setPriceFilter] = useState<number | "ALL">("ALL");
 
   const theme = parseTicketDesignTheme(event.ticketDesign?.theme ?? {});
   const designName = event.ticketDesign?.name ?? "Classic";
@@ -81,6 +92,35 @@ export function EventTicketsManager({
     for (const t of tickets) counts[t.status] += 1;
     return counts;
   }, [tickets]);
+
+  const priceOptions = useMemo(
+    () => [...new Set(tickets.map((t) => t.priceCents))].sort((a, b) => a - b),
+    [tickets]
+  );
+
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((t) => {
+      if (statusFilter !== "ALL" && t.status !== statusFilter) return false;
+      if (priceFilter !== "ALL" && t.priceCents !== priceFilter) return false;
+      return true;
+    });
+  }, [tickets, statusFilter, priceFilter]);
+
+  const tableGroups = useMemo(
+    () =>
+      groupTicketsForTable(
+        filteredTickets.map((t) => ({ ...t, currencyCode: event.currencyCode })),
+        event.name
+      ),
+    [filteredTickets, event.name, event.currencyCode]
+  );
+
+  const hasActiveFilters = statusFilter !== "ALL" || priceFilter !== "ALL";
+
+  function clearFilters() {
+    setStatusFilter("ALL");
+    setPriceFilter("ALL");
+  }
 
   async function handleGenerate() {
     setGenerating(true);
@@ -135,35 +175,22 @@ export function EventTicketsManager({
     }
   }
 
-  async function handleTakePhoto() {
-    const node = captureRef.current?.querySelector("#event-share-capture");
-    if (!node || !(node instanceof HTMLElement)) {
-      toast.error("Capture area not ready");
-      return;
-    }
-    setExporting(true);
-    try {
-      const ratio = SHARE_ASPECT_RATIOS.find((r) => r.id === aspectRatio)!;
-      const dataUrl = await toPng(node, {
-        pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: "#0f0f14",
-      });
-      const link = document.createElement("a");
-      link.download = `${event.slug}-tickets-${aspectRatio.replace(":", "x")}.png`;
-      link.href = dataUrl;
-      link.click();
-      toast.success("Image downloaded");
-    } catch {
-      toast.error("Export failed");
-    } finally {
-      setExporting(false);
-    }
-  }
+  const displayTickets = filteredTickets;
 
-  const displayTickets = tickets.length > 0 ? tickets : [];
+  const shareTickets = useMemo(() => {
+    const source =
+      displayTickets.length > 0
+        ? displayTickets
+        : Array.from({ length: Math.min(12, event.ticketQuantity) }, (_, i) => ({
+            ticketNumber: String(i + 1).padStart(4, "0"),
+            priceCents: currentPriceCents ?? 0,
+          }));
 
-  const shareNumbers = displayTickets.slice(0, 6).map((t) => t.ticketNumber);
+    return source.slice(0, MAX_SHARE_TICKET_COUNT).map((t) => ({
+      number: t.ticketNumber,
+      priceCents: t.priceCents,
+    }));
+  }, [displayTickets, event.ticketQuantity, currentPriceCents]);
 
   return (
     <section className="space-y-4 rounded-xl border border-border bg-card/30 p-5">
@@ -202,36 +229,114 @@ export function EventTicketsManager({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(TICKET_LIST_VIEW_LABELS) as TicketListView[]).map((view) => {
-          const Icon = VIEW_ICONS[view];
-          return (
-            <button
-              key={view}
-              type="button"
-              onClick={() => setListView(view)}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium",
-                listView === view
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground"
-              )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(TICKET_LIST_VIEW_LABELS) as TicketListView[]).map((view) => {
+            const Icon = VIEW_ICONS[view];
+            return (
+              <button
+                key={view}
+                type="button"
+                onClick={() => setListView(view)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium",
+                  listView === view
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground"
+                )}
+              >
+                <Icon className="size-3.5" />
+                {TICKET_LIST_VIEW_LABELS[view]}
+              </button>
+            );
+          })}
+        </div>
+
+        {tickets.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="size-3.5 text-muted-foreground" />
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as TicketStatus | "ALL")}
             >
-              <Icon className="size-3.5" />
-              {TICKET_LIST_VIEW_LABELS[view]}
-            </button>
-          );
-        })}
+              <SelectTrigger size="sm" className="min-w-[130px]">
+                <SelectValue placeholder="Status">
+                  {statusFilter === "ALL"
+                    ? "All statuses"
+                    : TICKET_STATUS_LABELS[statusFilter]}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All statuses</SelectItem>
+                {(Object.keys(TICKET_STATUS_LABELS) as TicketStatus[]).map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {TICKET_STATUS_LABELS[status]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={priceFilter === "ALL" ? "ALL" : String(priceFilter)}
+              onValueChange={(v) => setPriceFilter(v === "ALL" ? "ALL" : Number(v))}
+            >
+              <SelectTrigger size="sm" className="min-w-[120px]">
+                <SelectValue placeholder="Price">
+                  {priceFilter === "ALL"
+                    ? "All prices"
+                    : formatMoney(priceFilter, event.currencyCode)}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All prices</SelectItem>
+                {priceOptions.map((priceCents) => (
+                  <SelectItem key={priceCents} value={String(priceCents)}>
+                    {formatMoney(priceCents, event.currencyCode)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasActiveFilters ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={clearFilters}
+              >
+                <X className="size-3.5" />
+                Clear
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      {displayTickets.length === 0 ? (
+      {hasActiveFilters && tickets.length > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Showing {filteredTickets.length} of {tickets.length} tickets
+        </p>
+      ) : null}
+
+      {tickets.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
           No tickets yet. Add a price period above, then generate tickets.
           {currentPriceCents !== null && (
             <p className="mt-2 text-primary">
-              Today&apos;s price: {formatMoney(currentPriceCents)}
+              Today&apos;s price: {formatMoney(currentPriceCents, event.currencyCode)}
             </p>
           )}
+        </div>
+      ) : displayTickets.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
+          No tickets match the current filters.
+          <Button
+            type="button"
+            variant="link"
+            className="mt-2 h-auto p-0 text-sm"
+            onClick={clearFilters}
+          >
+            Clear filters
+          </Button>
         </div>
       ) : listView === "GRID" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -241,6 +346,7 @@ export function EventTicketsManager({
               ticket={t}
               eventName={event.name}
               theme={theme}
+              currencyCode={event.currencyCode}
               onClick={() => {
                 setSelected(t);
                 setQrOpen(true);
@@ -263,7 +369,7 @@ export function EventTicketsManager({
                 <span className="font-mono">{t.ticketNumber}</span>
                 <span className="flex items-center gap-2">
                   <span className="text-sm text-primary">
-                    {formatMoney(t.priceCents)}
+                    {formatMoney(t.priceCents, event.currencyCode)}
                   </span>
                   <TicketStatusBadge status={t.status} />
                 </span>
@@ -279,6 +385,7 @@ export function EventTicketsManager({
                 ticket={t}
                 eventName={event.name}
                 theme={theme}
+                currencyCode={event.currencyCode}
                 onClick={() => {
                   setSelected(t);
                   setQrOpen(true);
@@ -288,35 +395,17 @@ export function EventTicketsManager({
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/30 text-left text-muted-foreground">
-                <th className="px-4 py-2">#</th>
-                <th className="px-4 py-2">Price</th>
-                <th className="px-4 py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayTickets.map((t) => (
-                <tr
-                  key={t.id}
-                  className="cursor-pointer border-b border-border/60 hover:bg-muted/20"
-                  onClick={() => {
-                    setSelected(t);
-                    setQrOpen(true);
-                  }}
-                >
-                  <td className="px-4 py-2 font-mono">{t.ticketNumber}</td>
-                  <td className="px-4 py-2">{formatMoney(t.priceCents)}</td>
-                  <td className="px-4 py-2">
-                    <TicketStatusBadge status={t.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <TicketsAggregatedTable
+          groups={tableGroups}
+          showEventColumn
+          onViewGroup={(group) => {
+            const firstTicket = (group.tickets ?? [])[0];
+            if (!firstTicket) return;
+            setSelected(firstTicket);
+            setQrOpen(true);
+          }}
+          modifyHref={() => `/dashboard/events/${event.id}/edit`}
+        />
       )}
 
       <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
@@ -352,10 +441,14 @@ export function EventTicketsManager({
                 </Button>
               }
             />
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-h-[92vh] w-[min(96vw,56rem)] max-w-[min(96vw,56rem)] overflow-y-auto overflow-x-hidden sm:max-w-[min(96vw,56rem)]">
               <DialogHeader>
-                <DialogTitle>Share ticket list</DialogTitle>
+                <DialogTitle>Share preview</DialogTitle>
               </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Full-width promo with up to {MAX_SHARE_TICKET_COUNT} tickets. Screenshot
+                this view to share on social media.
+              </p>
               <div className="flex flex-wrap gap-2">
                 {SHARE_ASPECT_RATIOS.map((r) => (
                   <button
@@ -373,10 +466,7 @@ export function EventTicketsManager({
                   </button>
                 ))}
               </div>
-              <div
-                ref={captureRef}
-                className="flex justify-center overflow-auto rounded-lg border border-dashed p-4"
-              >
+              <div className="w-full min-w-0">
                 <EventShareCapture
                   eventName={event.name}
                   tenantName={tenantName}
@@ -385,19 +475,12 @@ export function EventTicketsManager({
                   ticketQuantity={event.ticketQuantity}
                   winnerCount={event.winnerCount}
                   bannerUrl={event.bannerUrl}
-                  designName={designName}
                   theme={theme}
-                  listView={listView}
                   aspectRatio={aspectRatio}
-                  mockTicketNumbers={
-                    shareNumbers.length > 0 ? shareNumbers : ["0001", "0002", "0003"]
-                  }
-                  ticketPrices={displayTickets.slice(0, 6).map((t) => t.priceCents)}
+                  tickets={shareTickets}
+                  currencyCode={event.currencyCode}
                 />
               </div>
-              <Button onClick={handleTakePhoto} disabled={exporting}>
-                {exporting ? "Exporting…" : "Download PNG"}
-              </Button>
             </DialogContent>
           </Dialog>
         </div>
@@ -406,6 +489,7 @@ export function EventTicketsManager({
       <TicketQrDialog
         ticket={selected}
         eventName={event.name}
+        currencyCode={event.currencyCode}
         open={qrOpen}
         onOpenChange={setQrOpen}
         onTicketUpdated={(t) => {
