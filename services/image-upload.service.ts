@@ -7,6 +7,10 @@ import {
   type ImageUploadPurpose,
 } from "@/lib/storage";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("services.image-upload.service");
+
 const MIME_EXTENSION: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -116,7 +120,7 @@ export async function uploadTenantImage(
     };
   } catch (error) {
     if (error instanceof ImageUploadError) throw error;
-    console.error("[image-upload]", error);
+    log.error({ err: error }, "[image-upload]");
     throw new ImageUploadError("Failed to upload image", "UPLOAD_FAILED");
   }
 }

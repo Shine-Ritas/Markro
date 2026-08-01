@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireTicketsRead } from "@/lib/api-auth";
 import { listPosAvailableTickets } from "@/services/pos.service";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.pos");
 
 type RouteContext = { params: Promise<{ eventId: string }> };
 
@@ -33,7 +38,7 @@ export async function GET(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[pos event tickets GET]", error);
+    log.error({ err: error }, "pos event tickets GET");
     return NextResponse.json({ error: "Failed to load tickets" }, { status: 500 });
   }
 }

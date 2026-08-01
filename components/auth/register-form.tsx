@@ -75,6 +75,7 @@ export function RegisterForm() {
         label="Sign up with Google"
         callbackUrl="/dashboard"
         mode="signup"
+        intent="staff"
       />
 
       <AuthDivider />

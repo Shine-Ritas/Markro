@@ -3,6 +3,10 @@ import { ApiError, requireApiSession, requireDrawsRun } from "@/lib/api-auth";
 import { getActiveDrawSession, pickManualWinner } from "@/services/draw.service";
 import { manualPickSchema } from "@/validators/draws";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.draws");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: RouteContext) {
@@ -41,7 +45,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[draw manual]", error);
+    log.error({ err: error }, "[draw manual]");
     return NextResponse.json({ error: "Failed to pick winner" }, { status: 500 });
   }
 }

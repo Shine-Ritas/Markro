@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { randomBytes } from "crypto";
 import { forgotPasswordSchema } from "@/validators/auth";
 import { prisma } from "@/lib/prisma";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.auth");
 
 const RESET_EXPIRY_HOURS = 1;
 
@@ -50,7 +55,7 @@ export async function POST(request: Request) {
       ...(isDev ? { resetUrl } : {}),
     });
   } catch (error) {
-    console.error("[forgot-password]", error);
+    log.error({ err: error }, "forgot-password");
     return NextResponse.json({ error: "Unable to process request" }, { status: 500 });
   }
 }

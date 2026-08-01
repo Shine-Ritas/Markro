@@ -3,6 +3,10 @@ import { ticketAppearanceSchema } from "@/validators/ticket-appearance";
 import { ApiError, requireApiSession, requireEventsWrite } from "@/lib/api-auth";
 import { updateTenantEventTicketAppearance } from "@/services/event.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.events");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -37,7 +41,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[events appearance PATCH]", error);
+    log.error({ err: error }, "[events appearance PATCH]");
     return NextResponse.json(
       { error: "Failed to update ticket appearance" },
       { status: 500 }

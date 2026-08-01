@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { ApiError, requireApiSession, requireDrawsRun } from "@/lib/api-auth";
 import { startDrawSession } from "@/services/draw.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.draws");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(_request: Request, context: RouteContext) {
@@ -21,7 +25,7 @@ export async function POST(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[draw start]", error);
+    log.error({ err: error }, "[draw start]");
     return NextResponse.json({ error: "Failed to start draw" }, { status: 500 });
   }
 }

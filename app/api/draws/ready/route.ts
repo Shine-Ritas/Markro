@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireEventsRead } from "@/lib/api-auth";
 import { listDrawReadyEvents } from "@/services/prize.service";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.draws");
 
 export async function GET() {
   try {
@@ -13,7 +18,7 @@ export async function GET() {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[draws ready GET]", error);
+    log.error({ err: error }, "draws ready GET");
     return NextResponse.json(
       { error: "Failed to load draw-ready events" },
       { status: 500 }

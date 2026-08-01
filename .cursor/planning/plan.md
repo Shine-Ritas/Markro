@@ -32,11 +32,13 @@ Build a modern **multi-tenant** Lucky Draw SaaS for organizations running **onli
 ### Current focus
 
 - Core SaaS architecture
-- **Authentication (email + Google OAuth)**
+- **Authentication (email + Google OAuth)** — staff + buyer intents
 - Multi-tenant PostgreSQL
 - Events, tickets, POS, lucky draw engine
 - Dashboard and modern UI/UX
+- **Buyer portal** (Home, tickets, purchases, wins, explore)
 - **Custom ticket card designs** (per event) + **social-ready ticket list exports**
+- **Structured logging** (`next-logger` + Pino module loggers)
 
 ---
 
@@ -51,30 +53,55 @@ Product spec (card designs, list views, social export): **[`ticket-appearance.md
 
 ## Global progress
 
-| Phase | Name                           | Status                      |
-| ----- | ------------------------------ | --------------------------- |
-| 1     | Project foundation             | `[x]` Done                  |
-| 2     | Database & multi-tenant + auth | `[x]` Done                  |
-| 3     | Dashboard & layout             | `[x]` Done                  |
-| 4     | Event management               | `[x]` Done                  |
-| 5     | Ticket management              | `[x]` Done                  |
-| 6     | POS system                     | `[x]` Done                  |
-| 7     | Lucky draw engine              | `[x]` Done                  |
-| 8     | Customer management            | `[~]` Extension in progress |
-| 9     | Customer account (end user)    | `[ ]` Not started           |
-| 10    | Analytics & reporting          | `[ ]` Not started           |
-| 11    | Notifications                  | `[ ]` Not started           |
-| 12    | Security & audit               | `[ ]` Not started           |
-| 13    | Subscription (no payments)     | `[ ]` Not started           |
-| 14    | Landing & marketing            | `[ ]` Not started           |
-| 15    | Performance                    | `[ ]` Not started           |
-| 16    | DevOps & deployment            | `[ ]` Not started           |
+| Phase | Name                           | Status                     |
+| ----- | ------------------------------ | -------------------------- |
+| 1     | Project foundation             | `[x]` Done                 |
+| 2     | Database & multi-tenant + auth | `[x]` Done                 |
+| 3     | Dashboard & layout             | `[x]` Done                 |
+| 4     | Event management               | `[x]` Done                 |
+| 5     | Ticket management              | `[x]` Done                 |
+| 6     | POS system                     | `[x]` Done                 |
+| 7     | Lucky draw engine              | `[x]` Done                 |
+| 8     | Customer management            | `[x]` Done                 |
+| 9     | Customer account (end user)    | `[~]` Buyer portal shipped |
+| 10    | Analytics & reporting          | `[ ]` Not started          |
+| 11    | Notifications                  | `[ ]` Not started          |
+| 12    | Security & audit               | `[ ]` Not started          |
+| 13    | Subscription (no payments)     | `[ ]` Not started          |
+| 14    | Landing & marketing            | `[ ]` Not started          |
+| 15    | Performance                    | `[ ]` Not started          |
+| 16    | DevOps & deployment            | `[ ]` Not started          |
 
 **Legend:** `[ ]` not started · `[~]` in progress · `[x]` done
 
 ---
 
-## Cursor workflow (every phase)
+## Logging (infrastructure)
+
+Structured logging is wired via **`next-logger`** (patches Next.js + `console` to JSON) and **Pino module loggers** in `lib/logger/`.
+
+| Piece                | Path / env                               | Purpose                                          |
+| -------------------- | ---------------------------------------- | ------------------------------------------------ |
+| Instrumentation      | `instrumentation.ts`                     | Loads `next-logger` on Node.js runtime           |
+| Next.js patch config | `next-logger.config.cjs`                 | Pretty-print in dev, JSON in production          |
+| App loggers          | `lib/logger/index.ts`                    | `createModuleLogger("api.events")` child loggers |
+| Module names         | `lib/logger/modules.ts`                  | Canonical `LogModules` constants                 |
+| Log level            | `LOG_LEVEL` env (`debug` default in dev) | Controls verbosity                               |
+
+**Usage in server code:**
+
+```ts
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.events");
+
+log.error({ err: error }, "events GET failed");
+log.info({ eventId }, "event published");
+```
+
+Client components may keep `console.error` (browser-only).
+
+---
 
 ```text
 1. Read this phase section + bug_report.md + other.md
@@ -110,14 +137,16 @@ Auth stack: **Auth.js (NextAuth v5)** with:
 
 ### Google OAuth requirements
 
-- [ ] Google Cloud Console project + OAuth 2.0 Client (Web)
-- [ ] Authorized redirect URI: `{APP_URL}/api/auth/callback/google`
-- [ ] Env vars: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `AUTH_URL`
-- [ ] Sign in with Google on login + register pages
-- [ ] Link Google account to existing email user (same email)
-- [ ] Store `accounts` table (provider, providerAccountId, userId)
-- [ ] Tenant assignment on first Google sign-in (register flow)
-- [ ] Role preserved across OAuth and credentials login
+- [x] Google Cloud Console project + OAuth 2.0 Client (Web)
+- [x] Authorized redirect URI: `{APP_URL}/api/auth/callback/google` (not `/auth/google/callback`)
+- [x] Env vars: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `AUTH_URL`, `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED`
+- [x] Sign in with Google on login + register pages (staff and buyer)
+- [x] Link Google account to existing email user (same email)
+- [x] Store `accounts` table (provider, providerAccountId, userId)
+- [x] Tenant assignment on first Google sign-in (staff register flow)
+- [x] Role preserved across OAuth and credentials login
+- [x] `auth_intent` cookie splits buyer vs staff OAuth flows
+- [x] Fix OAuth race: `assignGlobalUserCode` deferred to `jwt` / `createUser` (not `signIn`)
 
 ---
 
@@ -477,7 +506,7 @@ Customer management module (tenant CRM). Base CRM shipped; see **Phase 8 extensi
 
 ### Phase 8 extension — Global user code & organizer linking
 
-**Status:** `[~]` In progress (base CRM done; extension pending)
+**Status:** `[x]` Done
 
 **Cursor prompt:** `Implement Phase 8 extension (global user code & organizer linking) from @.cursor/planning/plan.md`
 
@@ -504,35 +533,35 @@ Not the same as `Customer.referralCode` (per-tenant referral tracking).
 
 #### Schema
 
-- [ ] Add `User.globalUserCode` (`global_user_code`) — unique, indexed, auto-generated on create
-- [ ] Backfill existing users with codes via migration/script
-- [ ] Expose `globalUserCode` in user DTOs used by search APIs (never expose raw UUID to organizers for lookup)
+- [x] Add `User.globalUserCode` (`global_user_code`) — unique, indexed, auto-generated on create
+- [x] Backfill existing users with codes via migration/script (`backfillGlobalUserCodes`)
+- [x] Expose `globalUserCode` in user DTOs used by search APIs (never expose raw UUID to organizers for lookup)
 
 #### Organizer Customer CRUD — create
 
-- [ ] **Global account search** on create form: type `globalUserCode` **or** email
-- [ ] `GET /api/customers/lookup-global?q=` — returns matching global users (code exact, email partial); requires `customers.write`
-- [ ] If account found → select → pre-fill name/email/phone from `User` + any known profile hints → create `Customer` with `userId` set
-- [ ] If not found → create orphan `Customer` (phone required, `userId` null) as today
+- [x] **Global account search** on create form: type `globalUserCode` **or** email
+- [x] `GET /api/customers/lookup-global?q=` — returns matching global users (code exact, email partial); requires `customers.write`
+- [x] If account found → select → pre-fill name/email/phone from `User` + any known profile hints → create `Customer` with `userId` set
+- [x] If not found → create orphan `Customer` (phone required, `userId` null) as today
 
 #### Organizer Customer CRUD — link existing
 
-- [ ] On customer detail/edit: **Link global account** action for customers where `userId` is null
-- [ ] Same search/select UI (code or email)
-- [ ] `POST /api/customers/[id]/link-user` — set `Customer.userId`; reject if user already linked at this tenant or customer already linked
-- [ ] Show linked `globalUserCode` + email on customer profile when linked
+- [x] On customer detail/edit: **Link global account** action for customers where `userId` is null
+- [x] Same search/select UI (code or email)
+- [x] `POST /api/customers/[id]/link-user` — set `Customer.userId`; reject if user already linked at this tenant or customer already linked
+- [x] Show linked `globalUserCode` + email on customer profile when linked
 
 #### POS integration (extend existing)
 
-- [ ] Customer search in POS may optionally search by `globalUserCode` in addition to name/phone
-- [ ] Selecting a linked customer shows global code in summary card
+- [x] Customer search in POS may optionally search by `globalUserCode` in addition to name/phone
+- [x] Selecting a linked customer shows global code in summary card
 
 #### Exit criteria (extension)
 
-- [ ] Every `User` has a unique `globalUserCode`
-- [ ] Organizer can create a customer pre-linked by searching code/email
-- [ ] Organizer can link an orphan customer to a global account retroactively
-- [ ] Linked customer shows global code in CRM detail and POS picker
+- [x] Every `User` has a unique `globalUserCode`
+- [x] Organizer can create a customer pre-linked by searching code/email
+- [x] Organizer can link an orphan customer to a global account retroactively
+- [x] Linked customer shows global code in CRM detail and POS picker
 
 #### Deliverable (extension)
 
@@ -563,35 +592,38 @@ User (global)                    ← email + globalUserCode e.g. LD-A7K2M9
 
 ### Checklist — auth & linking
 
-- [ ] Buyer registration + login (email/password + Google OAuth; reuse Auth.js `User` table; assign `globalUserCode` on create)
-- [ ] Dedicated routes: `/account` (portal), `/account/login`, `/account/register` (or route group `(customer)`)
-- [ ] **Buyer-initiated claim / link** flow: verify phone (SMS stub OK) or email to attach orphan `Customer` rows where `userId` is null (organizer may have already linked via Phase 8 extension)
-- [ ] On POS sale complete: if phone matches a logged-in buyer `User`, set `Customer.userId` automatically
-- [ ] On buyer sign-up: offer to claim orphan `Customer` rows by verified phone/email (skip rows already linked by organizer)
-- [ ] Prevent linking a `Customer` already owned by another `User`
-- [ ] Buyer profile displays `globalUserCode` (shareable ID across organizers)
+- [x] Buyer registration + login (email/password + Google OAuth; reuse Auth.js `User` table; assign `globalUserCode` on create)
+- [x] Dedicated routes: `/account` (portal), `/account/login`, `/account/register` (route group `(account)`)
+- [x] **Buyer-initiated claim / link** flow: verify phone (SMS stub OK) or email to attach orphan `Customer` rows where `userId` is null
+- [x] On POS sale complete: if phone matches a logged-in buyer `User`, set `Customer.userId` automatically (`claimCustomersByEmail`)
+- [x] On buyer sign-up / Google sign-in: claim orphan `Customer` rows by verified phone/email
+- [x] Prevent linking a `Customer` already owned by another `User`
+- [ ] Buyer profile displays `globalUserCode` on a dedicated profile card (removed from home; show in settings/profile later)
 
 ### Checklist — buyer portal UI
 
-- [ ] **My account** home — profile, linked organizers count
-- [ ] **My tickets** — all tickets across organizers (event name, org name, ticket number, status)
-- [ ] **My purchases** — POS receipts grouped by organizer
-- [ ] **My wins** — draw results with prize name, event, organizer
+- [x] **Home** (`/account`) — featured events, quick links, recent win highlight (user info card removed per design)
+- [x] **Explore** (`/account/explore`) — published events across organizers with search
+- [x] **My tickets** — all tickets across organizers (event name, org name, ticket number, status)
+- [x] **My purchases** — POS receipts grouped by organizer
+- [x] **My wins** — draw results with prize name, event, organizer
 - [ ] Per-organizer filter or tabs when buyer has history at multiple tenants
-- [ ] Mobile-responsive layout (buyers mostly on phone)
+- [x] Mobile-responsive layout (buyers mostly on phone)
 
 ### Checklist — API
 
-- [ ] `GET /api/me` — buyer profile + linked customer profile IDs
-- [ ] `GET /api/me/tickets`, `/api/me/purchases`, `/api/me/wins` — cross-tenant aggregation (scoped to `userId`)
-- [ ] `POST /api/me/link-phone` (or email) — verify and link orphan `Customer` rows
-- [ ] Middleware: buyer routes require session **without** `Staff` membership (or allow both with role detection)
+- [x] `GET /api/me` — buyer profile + linked customer profile IDs
+- [x] `GET /api/me/tickets`, `/api/me/purchases`, `/api/me/wins` — cross-tenant aggregation (scoped to `userId`)
+- [x] `GET /api/me/events/featured`, `/api/me/events/explore` — buyer home + explore
+- [x] `POST /api/me/link-phone` (or email) — verify and link orphan `Customer` rows
+- [x] `POST /api/auth/buyer/register` — buyer self-registration
+- [x] Middleware: buyer routes require session; staff vs buyer intent via `auth_intent` cookie on OAuth
 
 ### Exit criteria
 
-- [ ] Buyer registers once and sees tickets/wins from **two or more organizers** after linking
-- [ ] New POS purchase auto-links to logged-in buyer when phone matches
-- [ ] Staff dashboard and buyer portal do not conflict for users who are both
+- [ ] Buyer registers once and sees tickets/wins from **two or more organizers** after linking (needs multi-tenant smoke test)
+- [x] New POS purchase auto-links to logged-in buyer when phone matches
+- [x] Staff dashboard and buyer portal do not conflict for users who are both
 
 ### Deliverable
 
@@ -650,6 +682,7 @@ Internal notification system.
 - [ ] Audit trail for user, scan, winner, staff actions
 - [ ] Fraud prep: duplicate ticket detection, IP logging
 - [ ] OAuth session hardening (CSRF, secure cookies review)
+- [x] **Structured logging** — `next-logger` (Next.js + console patch) + Pino module loggers in `lib/logger/`
 
 ### Exit criteria
 
@@ -732,7 +765,7 @@ Optimized platform baseline.
 - [ ] Vercel + managed PostgreSQL prep
 - [ ] CI/CD strategy
 - [ ] Production env checklist (Google OAuth production URLs)
-- [ ] Error + performance monitoring stubs
+- [x] Error + performance monitoring stubs — structured JSON logging via `next-logger` + `LOG_LEVEL`
 
 ### Exit criteria
 
@@ -768,6 +801,8 @@ Requirements: beautiful, fast, scalable, mobile-responsive, multi-tenant, produc
 
 | Date       | Change                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------------------------- |
+| 2026-08-02 | Structured logging: `next-logger` + Pino module loggers (`lib/logger/`); `LOG_LEVEL` env var                  |
+| 2026-08-02 | Phase 8 extension done; Phase 9 buyer portal shipped (home, explore, tickets, purchases, wins, OAuth)         |
 | 2026-08-01 | Phase 8 extension: `User.globalUserCode` (LD-XXXXXX), organizer search/link by code or email in Customer CRUD |
 | 2026-08-01 | Phase 8 done; new Phase 9 Customer account (multi-organizer buyer portal); phases 9–15 → 10–16                |
 | 2026-05-20 | Ticket appearance spec → `ticket-appearance.md`; dedicated appearance page                                    |

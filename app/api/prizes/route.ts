@@ -3,6 +3,10 @@ import { prizeFormSchema } from "@/validators/prizes";
 import { ApiError, requireApiSession, requireEventsWrite } from "@/lib/api-auth";
 import { createTenantPrize, listTenantPrizes } from "@/services/prize.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.prizes");
+
 export async function GET() {
   try {
     const session = await requireApiSession();
@@ -14,7 +18,7 @@ export async function GET() {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[prizes GET]", error);
+    log.error({ err: error }, "[prizes GET]");
     return NextResponse.json({ error: "Failed to load prizes" }, { status: 500 });
   }
 }
@@ -44,7 +48,7 @@ export async function POST(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[prizes POST]", error);
+    log.error({ err: error }, "[prizes POST]");
     return NextResponse.json({ error: "Failed to create prize" }, { status: 500 });
   }
 }

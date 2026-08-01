@@ -3,6 +3,10 @@ import { ApiError, requireApiSession, requireCustomersWrite } from "@/lib/api-au
 import { linkCustomerToUser } from "@/services/customer.service";
 import { linkCustomerUserSchema } from "@/validators/customers";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.customers");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: RouteContext) {
@@ -36,7 +40,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers link-user POST]", error);
+    log.error({ err: error }, "[customers link-user POST]");
     return NextResponse.json({ error: "Failed to link customer" }, { status: 500 });
   }
 }

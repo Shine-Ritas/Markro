@@ -25,12 +25,13 @@ export async function generateUniqueGlobalUserCode(): Promise<string> {
   throw new Error("Failed to generate unique global user code");
 }
 
-export async function assignGlobalUserCode(userId: string): Promise<string> {
+export async function assignGlobalUserCode(userId: string): Promise<string | null> {
   const existing = await prisma.user.findUnique({
     where: { id: userId },
     select: { globalUserCode: true },
   });
-  if (existing?.globalUserCode) return existing.globalUserCode;
+  if (!existing) return null;
+  if (existing.globalUserCode) return existing.globalUserCode;
 
   const code = await generateUniqueGlobalUserCode();
   await prisma.user.update({

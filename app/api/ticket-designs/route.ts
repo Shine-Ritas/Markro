@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireEventsRead } from "@/lib/api-auth";
 import { listTicketDesignPresets } from "@/services/ticket-design.service";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.ticket-designs");
 
 export async function GET() {
   try {
@@ -13,7 +18,7 @@ export async function GET() {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[ticket-designs GET]", error);
+    log.error({ err: error }, "ticket-designs GET");
     return NextResponse.json(
       { error: "Failed to load ticket designs" },
       { status: 500 }

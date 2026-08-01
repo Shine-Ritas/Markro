@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireTicketsWrite } from "@/lib/api-auth";
 import { validateTicketSchema } from "@/validators/tickets";
 import { validateTicketByQrToken } from "@/services/ticket.service";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.tickets");
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +36,7 @@ export async function POST(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[tickets validate]", error);
+    log.error({ err: error }, "tickets validate");
     return NextResponse.json({ error: "Validation failed" }, { status: 500 });
   }
 }

@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+
 import { buyerRegisterSchema } from "@/validators/buyer";
 import { createUserWithCode } from "@/lib/user";
 import { claimCustomersByEmail } from "@/services/buyer.service";
 import { prisma } from "@/lib/prisma";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.auth");
 
 export async function POST(request: Request) {
   try {
@@ -43,7 +48,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("[buyer register]", error);
+    log.error({ err: error }, "buyer register");
     return NextResponse.json(
       { error: "Registration failed. Please try again." },
       { status: 500 }

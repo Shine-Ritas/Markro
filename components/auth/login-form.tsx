@@ -18,7 +18,8 @@ import type { z } from "zod";
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const AUTH_ERRORS: Record<string, string> = {
-  Configuration: "Auth is misconfigured. Check AUTH_SECRET and provider credentials.",
+  Configuration:
+    "Google sign-in failed (redirect URI mismatch). In Google Cloud Console, set the redirect URI to http://localhost:3000/api/auth/callback/google",
   CredentialsSignin: "Invalid email or password.",
   OAuthAccountNotLinked:
     "This email is registered with a password. Sign in with email first, then link Google from settings (Phase 3).",
@@ -76,7 +77,7 @@ export function LoginForm() {
 
   return (
     <div className="space-y-4">
-      <GoogleSignInButton callbackUrl={callbackUrl} />
+      <GoogleSignInButton callbackUrl={callbackUrl} intent="staff" />
 
       <AuthDivider />
 

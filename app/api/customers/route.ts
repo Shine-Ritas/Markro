@@ -12,6 +12,10 @@ import {
 } from "@/services/customer.service";
 import { customerFormSchema, customerListQuerySchema } from "@/validators/customers";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.customers");
+
 export async function GET(request: Request) {
   try {
     const session = await requireApiSession();
@@ -32,7 +36,7 @@ export async function GET(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers GET]", error);
+    log.error({ err: error }, "[customers GET]");
     return NextResponse.json({ error: "Failed to load customers" }, { status: 500 });
   }
 }
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers POST]", error);
+    log.error({ err: error }, "[customers POST]");
     return NextResponse.json({ error: "Failed to create customer" }, { status: 500 });
   }
 }
@@ -81,7 +85,7 @@ export async function PUT() {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers backfill PUT]", error);
+    log.error({ err: error }, "[customers backfill PUT]");
     return NextResponse.json(
       { error: "Failed to backfill customers" },
       { status: 500 }

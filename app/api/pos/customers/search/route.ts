@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireTicketsWrite } from "@/lib/api-auth";
 import { listTenantCustomers } from "@/services/customer.service";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.pos");
 
 export async function GET(request: Request) {
   try {
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[pos customers search GET]", error);
+    log.error({ err: error }, "pos customers search GET");
     return NextResponse.json({ error: "Failed to search customers" }, { status: 500 });
   }
 }

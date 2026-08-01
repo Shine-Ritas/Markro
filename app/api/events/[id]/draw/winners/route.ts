@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { ApiError, requireApiSession, requireEventsRead } from "@/lib/api-auth";
 import { listEventWinners } from "@/services/draw.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.draws");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -17,7 +21,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[event winners GET]", error);
+    log.error({ err: error }, "[event winners GET]");
     return NextResponse.json({ error: "Failed to load winners" }, { status: 500 });
   }
 }

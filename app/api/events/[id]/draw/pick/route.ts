@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { ApiError, requireApiSession, requireDrawsRun } from "@/lib/api-auth";
 import { pickRandomWinner, getActiveDrawSession } from "@/services/draw.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.draws");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(_request: Request, context: RouteContext) {
@@ -30,7 +34,7 @@ export async function POST(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[draw pick]", error);
+    log.error({ err: error }, "[draw pick]");
     return NextResponse.json({ error: "Failed to pick winner" }, { status: 500 });
   }
 }

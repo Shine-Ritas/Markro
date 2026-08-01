@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { ApiError, requireApiSession, requireCustomersRead } from "@/lib/api-auth";
 import { getCustomerPurchases } from "@/services/customer.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.customers");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -20,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customer purchases GET]", error);
+    log.error({ err: error }, "[customer purchases GET]");
     return NextResponse.json({ error: "Failed to load purchases" }, { status: 500 });
   }
 }

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireEventsRead } from "@/lib/api-auth";
 import { listTenantWinners } from "@/services/draw.service";
 import { winnersHistoryQuerySchema } from "@/validators/draws";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.winners");
 
 export async function GET(request: Request) {
   try {
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[winners GET]", error);
+    log.error({ err: error }, "winners GET");
     return NextResponse.json({ error: "Failed to load winners" }, { status: 500 });
   }
 }

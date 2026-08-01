@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { ApiError, requireApiSession, requireEventsWrite } from "@/lib/api-auth";
 import { publishTenantEvent } from "@/services/event.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.events");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(_request: Request, context: RouteContext) {
@@ -24,7 +28,7 @@ export async function POST(_request: Request, context: RouteContext) {
     if (error instanceof Error && error.message) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    console.error("[events publish]", error);
+    log.error({ err: error }, "[events publish]");
     return NextResponse.json({ error: "Failed to publish event" }, { status: 500 });
   }
 }

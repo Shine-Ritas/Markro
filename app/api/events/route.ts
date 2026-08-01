@@ -9,6 +9,10 @@ import {
 import { createTenantEvent, listTenantEvents } from "@/services/event.service";
 import type { EventStatus } from "@prisma/client";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.events");
+
 export async function GET(request: Request) {
   try {
     const session = await requireApiSession();
@@ -28,7 +32,7 @@ export async function GET(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[events GET]", error);
+    log.error({ err: error }, "[events GET]");
     return NextResponse.json({ error: "Failed to load events" }, { status: 500 });
   }
 }
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[events POST]", error);
+    log.error({ err: error }, "[events POST]");
     return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
   }
 }

@@ -17,6 +17,8 @@ import type { z } from "zod";
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const AUTH_ERRORS: Record<string, string> = {
+  Configuration:
+    "Google sign-in failed (redirect URI mismatch). In Google Cloud Console, set the redirect URI to http://localhost:3000/api/auth/callback/google",
   CredentialsSignin: "Invalid email or password.",
   Default: "Sign in failed. Please try again.",
 };

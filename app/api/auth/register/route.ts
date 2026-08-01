@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+
 import { registerSchema } from "@/validators/auth";
 import { createOrganizationWithOwner } from "@/lib/auth-provisioning";
 import { createAuditLog } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.auth");
 
 export async function POST(request: Request) {
   try {
@@ -50,7 +55,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("[register]", error);
+    log.error({ err: error }, "register");
     return NextResponse.json(
       { error: "Registration failed. Please try again." },
       { status: 500 }

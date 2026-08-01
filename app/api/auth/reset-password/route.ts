@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+
 import { resetPasswordSchema } from "@/validators/auth";
 import { hashPassword } from "@/lib/password";
 import { createAuditLog } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.auth");
 
 export async function POST(request: Request) {
   try {
@@ -64,7 +69,7 @@ export async function POST(request: Request) {
       message: "Password updated. You can sign in now.",
     });
   } catch (error) {
-    console.error("[reset-password]", error);
+    log.error({ err: error }, "reset-password");
     return NextResponse.json({ error: "Unable to reset password" }, { status: 500 });
   }
 }

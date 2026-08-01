@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireBuyerSession } from "@/lib/api-auth";
 import { getBuyerProfile } from "@/services/buyer.service";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.me");
 
 export async function GET() {
   try {
@@ -14,7 +19,7 @@ export async function GET() {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[me GET]", error);
+    log.error({ err: error }, "me GET");
     return NextResponse.json({ error: "Failed to load profile" }, { status: 500 });
   }
 }

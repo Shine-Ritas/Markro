@@ -8,6 +8,10 @@ import {
 import { addCustomerNote, listCustomerNotes } from "@/services/customer.service";
 import { customerNoteSchema } from "@/validators/customers";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.customers");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -26,7 +30,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customer notes GET]", error);
+    log.error({ err: error }, "[customer notes GET]");
     return NextResponse.json({ error: "Failed to load notes" }, { status: 500 });
   }
 }
@@ -61,7 +65,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customer notes POST]", error);
+    log.error({ err: error }, "[customer notes POST]");
     return NextResponse.json({ error: "Failed to add note" }, { status: 500 });
   }
 }

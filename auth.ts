@@ -1,16 +1,21 @@
 import NextAuth from "next-auth";
+
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { authConfig } from "@/auth.config";
+import { createGoogleProvider } from "@/lib/auth-google";
 import { provisionOAuthUser } from "@/lib/auth-provisioning";
 import { assignGlobalUserCode } from "@/lib/global-user-code";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { claimCustomersByEmail } from "@/services/buyer.service";
 import { getPrimaryStaffMembership } from "@/lib/tenant";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("auth");
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -50,19 +55,13 @@ async function enrichToken(userId: string) {
   };
 }
 
+const googleProvider = createGoogleProvider();
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   providers: [
-    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
-      ? [
-          Google({
-            clientId: process.env.AUTH_GOOGLE_ID,
-            clientSecret: process.env.AUTH_GOOGLE_SECRET,
-            allowDangerousEmailAccountLinking: true,
-          }),
-        ]
-      : []),
+    ...(googleProvider ? [googleProvider] : []),
     Credentials({
       name: "credentials",
       credentials: {
@@ -97,33 +96,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account }) {
       if (!user.email) return false;
 
-      if (user.id) {
-        await assignGlobalUserCode(user.id);
-      }
+      try {
+        if (account?.provider === "google") {
+          const cookieStore = await cookies();
+          const intent = cookieStore.get("auth_intent")?.value ?? "staff";
 
-      if (account?.provider === "google") {
-        const cookieStore = await cookies();
-        const intent = cookieStore.get("auth_intent")?.value ?? "staff";
+          if (intent === "buyer") {
+            if (user.id) await claimCustomersByEmail(user.id);
+            return true;
+          }
 
-        if (intent === "buyer") {
-          if (user.id) await claimCustomersByEmail(user.id);
-          return true;
-        }
-
-        const staffCount = await prisma.staff.count({
-          where: { userId: user.id!, deletedAt: null },
-        });
-        if (staffCount === 0) {
-          await provisionOAuthUser({
-            id: user.id!,
-            email: user.email,
-            name: user.name,
+          const staffCount = await prisma.staff.count({
+            where: { userId: user.id!, deletedAt: null },
           });
+          if (staffCount === 0) {
+            await provisionOAuthUser({
+              id: user.id!,
+              email: user.email,
+              name: user.name,
+            });
+          }
         }
-      }
 
-      if (user.id && account?.provider === "credentials") {
-        await claimCustomersByEmail(user.id);
+        if (user.id && account?.provider === "credentials") {
+          await claimCustomersByEmail(user.id);
+        }
+      } catch (error) {
+        log.error({ err: error }, "auth signIn callback");
       }
 
       return true;
@@ -131,6 +130,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       // Only hit Prisma on sign-in (Node.js). Middleware reads JWT without DB.
       if (user?.id) {
+        await assignGlobalUserCode(user.id);
         const enriched = await enrichToken(user.id);
         if (!enriched) return token;
         return { ...token, ...enriched };

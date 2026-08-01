@@ -6,6 +6,10 @@ import {
 } from "@/services/buyer.service";
 import { linkPhoneSchema } from "@/validators/buyer";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.me");
+
 export async function POST(request: Request) {
   try {
     const session = await requireBuyerSession();
@@ -39,7 +43,7 @@ export async function POST(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[me link-phone POST]", error);
+    log.error({ err: error }, "[me link-phone POST]");
     return NextResponse.json(
       { error: "Failed to process phone link" },
       { status: 500 }

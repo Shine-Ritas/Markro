@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireEventsWrite } from "@/lib/api-auth";
 import { ImageUploadError, uploadTenantImage } from "@/services/image-upload.service";
 import { imageUploadPurposeSchema } from "@/validators/image-upload";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.uploads");
 
 export async function POST(request: Request) {
   try {
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message, code: error.code }, { status });
     }
 
-    console.error("[uploads/images POST]", error);
+    log.error({ err: error }, "uploads/images POST");
     return NextResponse.json({ error: "Failed to upload image" }, { status: 500 });
   }
 }

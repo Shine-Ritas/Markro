@@ -12,6 +12,10 @@ import {
 } from "@/services/customer.service";
 import { customerFormSchema } from "@/validators/customers";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.customers");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -30,7 +34,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers GET id]", error);
+    log.error({ err: error }, "[customers GET id]");
     return NextResponse.json({ error: "Failed to load customer" }, { status: 500 });
   }
 }
@@ -68,7 +72,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers PATCH]", error);
+    log.error({ err: error }, "[customers PATCH]");
     return NextResponse.json({ error: "Failed to update customer" }, { status: 500 });
   }
 }
@@ -93,7 +97,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers DELETE]", error);
+    log.error({ err: error }, "[customers DELETE]");
     return NextResponse.json({ error: "Failed to delete customer" }, { status: 500 });
   }
 }

@@ -8,6 +8,10 @@ import {
 } from "@/lib/api-auth";
 import { listEventPrizes, setEventPrizes } from "@/services/prize.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.events");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -22,7 +26,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[event prizes GET]", error);
+    log.error({ err: error }, "[event prizes GET]");
     return NextResponse.json({ error: "Failed to load event prizes" }, { status: 500 });
   }
 }
@@ -58,7 +62,7 @@ export async function PUT(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[event prizes PUT]", error);
+    log.error({ err: error }, "[event prizes PUT]");
     return NextResponse.json({ error: "Failed to save event prizes" }, { status: 500 });
   }
 }

@@ -8,6 +8,10 @@ import {
 import { createReferral, listCustomerReferrals } from "@/services/customer.service";
 import { referralCreateSchema } from "@/validators/customers";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.customers");
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -26,7 +30,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customer referrals GET]", error);
+    log.error({ err: error }, "[customer referrals GET]");
     return NextResponse.json({ error: "Failed to load referrals" }, { status: 500 });
   }
 }
@@ -61,7 +65,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customer referrals POST]", error);
+    log.error({ err: error }, "[customer referrals POST]");
     return NextResponse.json({ error: "Failed to create referral" }, { status: 500 });
   }
 }

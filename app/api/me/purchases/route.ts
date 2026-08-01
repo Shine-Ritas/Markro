@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireBuyerSession } from "@/lib/api-auth";
 import { listBuyerPurchases } from "@/services/buyer.service";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.me");
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +19,7 @@ export async function GET(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[me purchases GET]", error);
+    log.error({ err: error }, "me purchases GET");
     return NextResponse.json({ error: "Failed to load purchases" }, { status: 500 });
   }
 }

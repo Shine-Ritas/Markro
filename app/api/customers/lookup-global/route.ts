@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { ApiError, requireApiSession, requireCustomersWrite } from "@/lib/api-auth";
 import { lookupGlobalUsers } from "@/services/customer.service";
 
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.customers");
+
 export async function GET(request: Request) {
   try {
     const session = await requireApiSession();
@@ -19,7 +23,7 @@ export async function GET(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[customers lookup-global GET]", error);
+    log.error({ err: error }, "[customers lookup-global GET]");
     return NextResponse.json(
       { error: "Failed to search global users" },
       { status: 500 }

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { ApiError, requireApiSession, requireTicketsRead } from "@/lib/api-auth";
 import { listTenantPosSales } from "@/services/pos.service";
 import { posSalesHistoryQuerySchema } from "@/validators/pos";
+
+import { createModuleLogger } from "@/lib/logger";
+
+const log = createModuleLogger("api.pos");
 
 export async function GET(request: Request) {
   try {
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error("[pos/sales/history GET]", error);
+    log.error({ err: error }, "pos/sales/history GET");
     return NextResponse.json(
       { error: "Failed to load sales history" },
       { status: 500 }

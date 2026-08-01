@@ -31,11 +31,7 @@ export function GoogleSignInButton({
   }
 
   if (!googleEnabled) {
-    return (
-      <Button type="button" variant="outline" className="w-full" disabled>
-        Google sign-in not configured
-      </Button>
-    );
+    return null;
   }
 
   return (
