@@ -8,7 +8,13 @@ import { formatMoney } from "@/lib/tickets";
 import type { TicketTableGroup } from "@/lib/ticket-groups";
 import type { TicketStatus } from "@prisma/client";
 
-const STATUS_ORDER: TicketStatus[] = ["AVAILABLE", "SOLD", "VALIDATED", "CANCELLED"];
+const STATUS_ORDER: TicketStatus[] = [
+  "AVAILABLE",
+  "SOLD",
+  "VALIDATED",
+  "WINNER",
+  "CANCELLED",
+];
 
 type TicketsAggregatedTableProps = {
   groups: TicketTableGroup[];

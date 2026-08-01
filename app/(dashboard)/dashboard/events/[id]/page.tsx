@@ -5,8 +5,13 @@ import { EventDetailActions } from "@/components/events/event-detail-actions";
 import { EventTicketsManager } from "@/components/events/event-tickets-manager";
 import { EventPriceSchedule } from "@/components/events/event-price-schedule";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
+import { EventWinnersSection } from "@/components/events/event-winners-section";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { DRAW_ORDER_SHORT_LABELS } from "@/lib/draw-order";
+import { EventPrizesSection } from "@/components/events/event-prizes-section";
 import { getTenantEventById } from "@/services/event.service";
+import { listEventWinners } from "@/services/draw.service";
+import { listEventPrizes, listTenantPrizes } from "@/services/prize.service";
 import {
   listEventTickets,
   listEventPricePeriods,
@@ -23,11 +28,22 @@ export default async function EventDetailPage({ params }: PageProps) {
   const { id } = await params;
   const tenantId = session.user.tenantId;
 
-  const [event, tickets, periods, currentPriceCents] = await Promise.all([
+  const [
+    event,
+    tickets,
+    periods,
+    currentPriceCents,
+    winners,
+    eventPrizes,
+    prizeCatalog,
+  ] = await Promise.all([
     getTenantEventById(tenantId, id),
     listEventTickets(tenantId, id),
     listEventPricePeriods(tenantId, id),
     resolveCurrentPriceForEvent(tenantId, id),
+    listEventWinners(tenantId, id),
+    listEventPrizes(tenantId, id),
+    listTenantPrizes(tenantId, { activeOnly: true }),
   ]);
 
   if (!event) notFound();
@@ -47,6 +63,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         <EventDetailActions
           event={event}
           tenantSlug={session.user.tenantSlug ?? "demo-org"}
+          prizesAssigned={eventPrizes.length}
         />
       </div>
 
@@ -106,6 +123,14 @@ export default async function EventDetailPage({ params }: PageProps) {
               <p className="font-heading text-2xl font-bold">{event.winnerCount}</p>
             </div>
           </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Draw order: {DRAW_ORDER_SHORT_LABELS[event.drawOrder]}
+          </p>
+          {event.drawCompletedAt ? (
+            <p className="mt-4 text-xs text-muted-foreground">
+              Draw completed {formatDate(event.drawCompletedAt)}
+            </p>
+          ) : null}
           {event.publishedAt ? (
             <p className="mt-4 text-xs text-muted-foreground">
               Published {formatDate(event.publishedAt)}
@@ -158,6 +183,14 @@ export default async function EventDetailPage({ params }: PageProps) {
         currencyCode={event.currencyCode}
       />
 
+      <EventPrizesSection
+        event={event}
+        catalog={prizeCatalog}
+        initialAssigned={eventPrizes}
+      />
+
+      <EventWinnersSection winners={winners} drawCompletedAt={event.drawCompletedAt} />
+
       <EventTicketsManager
         event={event}
         tenantName={session.user.tenantName ?? "Organization"}
@@ -166,7 +199,7 @@ export default async function EventDetailPage({ params }: PageProps) {
       />
 
       <p className="text-xs text-muted-foreground">
-        {event.status === "PUBLISHED" ? (
+        {event.status === "PUBLISHED" || event.status === "COMPLETED" ? (
           <Link
             href={`/org/${session.user.tenantSlug}/events/${event.slug}`}
             className="text-primary hover:underline"

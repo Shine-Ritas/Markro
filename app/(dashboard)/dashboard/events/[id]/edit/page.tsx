@@ -16,6 +16,9 @@ export default async function EditEventPage({ params }: PageProps) {
     getDefaultTicketDesignId(),
   ]);
   if (!event) notFound();
+  if (event.status === "COMPLETED") {
+    redirect(`/dashboard/events/${id}`);
+  }
 
   return (
     <div className="px-4 pb-8 sm:px-6">

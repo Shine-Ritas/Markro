@@ -59,7 +59,7 @@ Product spec (card designs, list views, social export): **[`ticket-appearance.md
 | 4     | Event management               | `[x]` Done        |
 | 5     | Ticket management              | `[x]` Done        |
 | 6     | POS system                     | `[x]` Done        |
-| 7     | Lucky draw engine              | `[ ]` Not started |
+| 7     | Lucky draw engine              | `[x]` Done        |
 | 8     | Customer management            | `[ ]` Not started |
 | 9     | Analytics & reporting          | `[ ]` Not started |
 | 10    | Notifications                  | `[ ]` Not started |
@@ -441,14 +441,14 @@ Functional POS selling numbered tickets by explicit selection **plus a completed
 
 ### Checklist
 
-- [ ] Fair random selection, duplicate prevention, multi-winner, tiers
-- [ ] `draw_sessions`, history, winner logs
-- [ ] Fullscreen draw UI, rolling animation, confetti
-- [ ] Controls: start, pause, manual override, confirm winner
+- [x] Fair random selection, duplicate prevention, multi-winner, tiers
+- [x] `draw_sessions`, history, winner logs
+- [x] Fullscreen draw UI, rolling animation, confetti
+- [x] Controls: start, pause, manual override, confirm winner
 
 ### Exit criteria
 
-- [ ] Draw produces logged winners; no duplicate winners
+- [x] Draw produces logged winners; no duplicate winners
 
 ### Deliverable
 

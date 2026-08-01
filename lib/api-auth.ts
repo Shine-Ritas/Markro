@@ -45,3 +45,9 @@ export function requireTicketsWrite(session: Session) {
     throw new ApiError("Forbidden", 403);
   }
 }
+
+export function requireDrawsRun(session: Session) {
+  if (!hasPermission(session, PERMISSIONS.DRAWS_RUN)) {
+    throw new ApiError("Forbidden", 403);
+  }
+}

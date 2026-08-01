@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { CURRENCY_CODES } from "@/lib/currencies";
 
+export const drawOrderSchema = z.enum(["HIGH_TO_LOW", "LOW_TO_HIGH"]);
+
 export const eventStatusSchema = z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]);
+
+/** Form-editable statuses only — COMPLETED is set by draw confirmation. */
+export const eventFormStatusSchema = eventStatusSchema;
 
 export const currencyCodeSchema = z
   .string()
@@ -33,10 +38,11 @@ export const eventFormSchema = z
     drawScheduledTime: z.string().optional().nullable(),
     ticketQuantity: z.number().int().min(0).max(1_000_000),
     winnerCount: z.number().int().min(1).max(10_000),
+    drawOrder: drawOrderSchema.optional(),
     ticketDesignId: z.string().uuid().optional().nullable(),
     ticketListViewDefault: ticketListViewSchema.optional(),
     currencyCode: currencyCodeSchema,
-    status: eventStatusSchema.optional(),
+    status: eventFormStatusSchema.optional(),
   })
   .refine(
     (data) => {

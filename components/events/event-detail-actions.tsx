@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, Globe, Palette, Pencil, Trash2 } from "lucide-react";
+import { Archive, Globe, Palette, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { EventDto } from "@/types/events";
@@ -10,9 +10,14 @@ import type { EventDto } from "@/types/events";
 type EventDetailActionsProps = {
   event: EventDto;
   tenantSlug: string;
+  prizesAssigned?: number;
 };
 
-export function EventDetailActions({ event, tenantSlug }: EventDetailActionsProps) {
+export function EventDetailActions({
+  event,
+  tenantSlug,
+  prizesAssigned = 0,
+}: EventDetailActionsProps) {
   const router = useRouter();
 
   async function postAction(path: "publish" | "archive", label: string) {
@@ -51,11 +56,25 @@ export function EventDetailActions({ event, tenantSlug }: EventDetailActionsProp
       <Button
         variant="outline"
         render={<Link href={`/dashboard/events/${event.id}/edit`} />}
+        disabled={event.status === "COMPLETED"}
       >
         <Pencil className="size-4" />
         Edit
       </Button>
       {event.status === "PUBLISHED" ? (
+        prizesAssigned >= event.winnerCount ? (
+          <Button render={<Link href={`/dashboard/events/${event.id}/draw`} />}>
+            <Sparkles className="size-4" />
+            Run draw
+          </Button>
+        ) : (
+          <Button variant="outline" disabled title="Assign all prizes first">
+            <Sparkles className="size-4" />
+            Run draw
+          </Button>
+        )
+      ) : null}
+      {event.status === "PUBLISHED" || event.status === "COMPLETED" ? (
         <Button
           variant="outline"
           render={

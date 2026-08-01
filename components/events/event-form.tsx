@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { eventFormSchema, type EventFormValues } from "@/validators/events";
 import { CURRENCY_OPTIONS } from "@/lib/currencies";
+import { DRAW_ORDER_LABELS } from "@/lib/draw-order";
 import { toDateInputValue, toTimeInputValue } from "@/lib/format";
 import type { EventDto } from "@/types/events";
 
@@ -47,6 +48,7 @@ function defaultValues(
       drawScheduledTime: "",
       ticketQuantity: 100,
       winnerCount: 1,
+      drawOrder: "HIGH_TO_LOW",
       ticketDesignId: defaultDesignId,
       ticketListViewDefault: "GRID",
       currencyCode: "THB",
@@ -68,10 +70,14 @@ function defaultValues(
     drawScheduledTime: toTimeInputValue(event.drawScheduledAt),
     ticketQuantity: event.ticketQuantity,
     winnerCount: event.winnerCount,
+    drawOrder: event.drawOrder,
     ticketDesignId: event.ticketDesignId ?? defaultDesignId,
     ticketListViewDefault: event.ticketListViewDefault,
     currencyCode: event.currencyCode ?? "THB",
-    status: event.status,
+    status:
+      event.status === "COMPLETED"
+        ? "PUBLISHED"
+        : (event.status as "DRAFT" | "PUBLISHED" | "ARCHIVED"),
   };
 }
 
@@ -112,6 +118,7 @@ export function EventForm({ mode, event, defaultDesignId }: EventFormProps) {
 
   const status = watch("status");
   const currencyCode = watch("currencyCode");
+  const drawOrder = watch("drawOrder");
 
   async function onSubmit(values: EventFormValues) {
     setSubmitting(true);
@@ -292,6 +299,33 @@ export function EventForm({ mode, event, defaultDesignId }: EventFormProps) {
             {errors.winnerCount ? (
               <p className="text-sm text-destructive">{errors.winnerCount.message}</p>
             ) : null}
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Draw order</Label>
+            <Select
+              value={drawOrder ?? "HIGH_TO_LOW"}
+              onValueChange={(v) =>
+                setValue("drawOrder", v as EventFormValues["drawOrder"], {
+                  shouldValidate: true,
+                })
+              }
+            >
+              <SelectTrigger className="w-full max-w-md">
+                <SelectValue placeholder="Select draw order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="HIGH_TO_LOW">
+                  {DRAW_ORDER_LABELS.HIGH_TO_LOW}
+                </SelectItem>
+                <SelectItem value="LOW_TO_HIGH">
+                  {DRAW_ORDER_LABELS.LOW_TO_HIGH}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Rank 1 is the top prize. Choose whether to draw it first or save it for
+              last.
+            </p>
           </div>
         </div>
       </FormSection>

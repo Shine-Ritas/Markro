@@ -6,6 +6,7 @@ import {
   getTotalEventCount,
   getUpcomingEvents,
 } from "@/lib/event-dashboard";
+import { countTenantWinners } from "@/services/draw.service";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
@@ -17,12 +18,14 @@ export default async function DashboardPage() {
 
   const tenantId = session.user.tenantId!;
 
-  const [activities, eventStatus, upcoming, totalEvents] = await Promise.all([
-    getRecentActivity(tenantId),
-    getEventStatusCounts(tenantId),
-    getUpcomingEvents(tenantId),
-    getTotalEventCount(tenantId),
-  ]);
+  const [activities, eventStatus, upcoming, totalEvents, totalWinners] =
+    await Promise.all([
+      getRecentActivity(tenantId),
+      getEventStatusCounts(tenantId),
+      getUpcomingEvents(tenantId),
+      getTotalEventCount(tenantId),
+      countTenantWinners(tenantId),
+    ]);
 
   return (
     <DashboardContent
@@ -32,6 +35,7 @@ export default async function DashboardPage() {
       tenantName={session.user.tenantName}
       upcomingEvents={upcoming}
       totalEvents={totalEvents}
+      totalWinners={totalWinners}
     />
   );
 }

@@ -58,6 +58,8 @@ const VIEW_ICONS: Record<TicketListView, typeof LayoutGrid> = {
   TABLE: Table2,
 };
 
+const TICKET_LIST_SCROLL = "max-h-[60vh] overflow-y-auto";
+
 type EventTicketsManagerProps = {
   event: EventDto;
   tenantName: string;
@@ -88,7 +90,7 @@ export function EventTicketsManager({
   const designName = event.ticketDesign?.name ?? "Classic";
 
   const stats = useMemo(() => {
-    const counts = { AVAILABLE: 0, SOLD: 0, VALIDATED: 0, CANCELLED: 0 };
+    const counts = { AVAILABLE: 0, SOLD: 0, VALIDATED: 0, WINNER: 0, CANCELLED: 0 };
     for (const t of tickets) counts[t.status] += 1;
     return counts;
   }, [tickets]);
@@ -339,7 +341,9 @@ export function EventTicketsManager({
           </Button>
         </div>
       ) : listView === "GRID" ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={cn("grid gap-3 sm:grid-cols-2 lg:grid-cols-3", TICKET_LIST_SCROLL)}
+        >
           {displayTickets.map((t) => (
             <TicketCard
               key={t.id}
@@ -355,7 +359,12 @@ export function EventTicketsManager({
           ))}
         </div>
       ) : listView === "COMPACT" ? (
-        <ul className="divide-y divide-border rounded-lg border border-border">
+        <ul
+          className={cn(
+            "divide-y divide-border rounded-lg border border-border",
+            TICKET_LIST_SCROLL
+          )}
+        >
           {displayTickets.map((t) => (
             <li key={t.id}>
               <button
@@ -378,7 +387,7 @@ export function EventTicketsManager({
           ))}
         </ul>
       ) : listView === "SHOWCASE" ? (
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className={cn("flex gap-3 overflow-x-auto pb-2", TICKET_LIST_SCROLL)}>
           {displayTickets.slice(0, 8).map((t) => (
             <div key={t.id} className="w-[min(200px,40vw)] shrink-0">
               <TicketCard
@@ -395,17 +404,19 @@ export function EventTicketsManager({
           ))}
         </div>
       ) : (
-        <TicketsAggregatedTable
-          groups={tableGroups}
-          showEventColumn
-          onViewGroup={(group) => {
-            const firstTicket = (group.tickets ?? [])[0];
-            if (!firstTicket) return;
-            setSelected(firstTicket);
-            setQrOpen(true);
-          }}
-          modifyHref={() => `/dashboard/events/${event.id}/edit`}
-        />
+        <div className={TICKET_LIST_SCROLL}>
+          <TicketsAggregatedTable
+            groups={tableGroups}
+            showEventColumn
+            onViewGroup={(group) => {
+              const firstTicket = (group.tickets ?? [])[0];
+              if (!firstTicket) return;
+              setSelected(firstTicket);
+              setQrOpen(true);
+            }}
+            modifyHref={() => `/dashboard/events/${event.id}/edit`}
+          />
+        </div>
       )}
 
       <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2">

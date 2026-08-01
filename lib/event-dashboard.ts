@@ -16,10 +16,15 @@ export async function getEventStatusCounts(tenantId: string) {
   return [
     { label: "Draft", count: map.DRAFT ?? 0, color: "bg-zinc-500" },
     { label: "Published", count: map.PUBLISHED ?? 0, color: "bg-emerald-500" },
+    { label: "Completed", count: map.COMPLETED ?? 0, color: "bg-amber-500" },
     { label: "Archived", count: map.ARCHIVED ?? 0, color: "bg-blue-500" },
     {
       label: "Total",
-      count: (map.DRAFT ?? 0) + (map.PUBLISHED ?? 0) + (map.ARCHIVED ?? 0),
+      count:
+        (map.DRAFT ?? 0) +
+        (map.PUBLISHED ?? 0) +
+        (map.COMPLETED ?? 0) +
+        (map.ARCHIVED ?? 0),
       color: "bg-primary",
     },
   ] as const;

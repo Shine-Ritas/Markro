@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { ActivityItem, TenantOption } from "@/lib/dashboard";
+import { isDrawSessionRoute } from "@/lib/dashboard-routes";
+import { cn } from "@/lib/utils";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -30,6 +33,8 @@ export function DashboardShell({
   activities,
 }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const immersive = isDrawSessionRoute(pathname);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -58,7 +63,14 @@ export function DashboardShell({
           }}
           onMenuClick={() => setMobileOpen(true)}
         />
-        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+        <div
+          className={cn(
+            "min-h-0 flex-1",
+            immersive ? "flex flex-col overflow-hidden" : "overflow-y-auto"
+          )}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

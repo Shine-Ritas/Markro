@@ -21,6 +21,9 @@ export async function POST(_request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    if (error instanceof Error && error.message) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("[events publish]", error);
     return NextResponse.json({ error: "Failed to publish event" }, { status: 500 });
   }

@@ -15,7 +15,13 @@ type TicketsListClientProps = {
   summary: TicketSummary;
 };
 
-const STATUS_ORDER: TicketStatus[] = ["AVAILABLE", "SOLD", "VALIDATED", "CANCELLED"];
+const STATUS_ORDER: TicketStatus[] = [
+  "AVAILABLE",
+  "SOLD",
+  "VALIDATED",
+  "WINNER",
+  "CANCELLED",
+];
 
 export function TicketsListClient({ tableGroups, summary }: TicketsListClientProps) {
   if (summary.total === 0) {

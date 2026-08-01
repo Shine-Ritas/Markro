@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Calendar, MapPin, Ticket, Trophy } from "lucide-react";
 import { formatDateTime } from "@/lib/format";
 import { getTenantEventBySlug } from "@/services/event.service";
+import { listPublicEventWinners } from "@/services/draw.service";
 import { prisma } from "@/lib/prisma";
 import { APP_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,9 @@ export default async function PublicEventPage({ params }: PageProps) {
 
   const event = await getTenantEventBySlug(tenant.id, eventSlug);
   if (!event) notFound();
+
+  const publicWinners =
+    event.status === "COMPLETED" ? await listPublicEventWinners(event.id) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,17 +96,56 @@ export default async function PublicEventPage({ params }: PageProps) {
           </section>
         ) : null}
 
-        <section className="mt-8 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
-          <Ticket className="mx-auto mb-3 size-10 text-primary/60" />
-          <h2 className="font-heading text-lg font-semibold">Get tickets</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Online ticket purchase opens in Phase 5. Visit our POS or contact the
-            organizer for early access.
-          </p>
-          <Button className="mt-4" disabled>
-            Buy tickets (coming soon)
-          </Button>
-        </section>
+        {publicWinners.length > 0 ? (
+          <section className="mt-8 rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
+            <h2 className="flex items-center gap-2 font-heading font-semibold">
+              <Trophy className="size-5 text-amber-400" />
+              Past winners
+            </h2>
+            <ul className="mt-4 space-y-2">
+              {publicWinners.map((w) => (
+                <li
+                  key={`${w.rank}-${w.ticketNumber}`}
+                  className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2 text-sm"
+                >
+                  <div>
+                    <span className="font-mono font-medium">#{w.ticketNumber}</span>
+                    {w.prizeName ? (
+                      <span className="ml-2 text-muted-foreground">
+                        · {w.prizeName}
+                      </span>
+                    ) : null}
+                  </div>
+                  {w.buyerFirstName ? (
+                    <span className="text-muted-foreground">{w.buyerFirstName}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {event.status === "PUBLISHED" ? (
+          <section className="mt-8 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
+            <Ticket className="mx-auto mb-3 size-10 text-primary/60" />
+            <h2 className="font-heading text-lg font-semibold">Get tickets</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Online ticket purchase opens in Phase 5. Visit our POS or contact the
+              organizer for early access.
+            </p>
+            <Button className="mt-4" disabled>
+              Buy tickets (coming soon)
+            </Button>
+          </section>
+        ) : event.status === "COMPLETED" ? (
+          <section className="mt-8 rounded-xl border border-border bg-card p-6 text-center">
+            <Trophy className="mx-auto mb-3 size-10 text-amber-400/80" />
+            <h2 className="font-heading text-lg font-semibold">Draw complete</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This event has concluded. See winners above.
+            </p>
+          </section>
+        ) : null}
       </main>
     </div>
   );

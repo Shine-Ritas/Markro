@@ -36,6 +36,7 @@ export function toEventDto(event: EventWithDesign): EventDto {
     drawScheduledAt: event.drawScheduledAt?.toISOString() ?? null,
     ticketQuantity: event.ticketQuantity,
     winnerCount: event.winnerCount,
+    drawOrder: event.drawOrder,
     ticketDesignId: event.ticketDesignId,
     ticketListViewDefault: event.ticketListViewDefault,
     currencyCode: event.currencyCode,
@@ -44,6 +45,7 @@ export function toEventDto(event: EventWithDesign): EventDto {
       : null,
     status: event.status,
     publishedAt: event.publishedAt?.toISOString() ?? null,
+    drawCompletedAt: event.drawCompletedAt?.toISOString() ?? null,
     createdAt: event.createdAt.toISOString(),
     updatedAt: event.updatedAt.toISOString(),
   };
@@ -72,5 +74,6 @@ export function toEventListItem(event: Event): EventListItem {
 export const EVENT_STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
   PUBLISHED: "Published",
+  COMPLETED: "Completed",
   ARCHIVED: "Archived",
 };

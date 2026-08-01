@@ -9,6 +9,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { Button } from "@/components/ui/button";
 import { getBreadcrumbs } from "@/lib/breadcrumbs";
 import type { ActivityItem, TenantOption } from "@/lib/dashboard";
+import { isDrawSessionRoute } from "@/lib/dashboard-routes";
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
   "/dashboard": "Welcome back! Here's what's happening with your events.",
@@ -51,6 +52,7 @@ export function DashboardHeader({
   onMenuClick,
 }: DashboardHeaderProps) {
   const pathname = usePathname();
+  const immersive = isDrawSessionRoute(pathname);
   const breadcrumbs = getBreadcrumbs(pathname);
   const resolvedTitle =
     title ?? breadcrumbs[breadcrumbs.length - 1]?.label ?? "Dashboard";
@@ -58,7 +60,13 @@ export function DashboardHeader({
     description ?? appearancePageDescription(pathname) ?? PAGE_DESCRIPTIONS[pathname];
 
   return (
-    <header className="flex shrink-0 flex-col gap-3 border-b border-border px-4 py-4 sm:px-6">
+    <header
+      className={
+        immersive
+          ? "flex shrink-0 border-b border-border px-4 py-2 sm:px-6"
+          : "flex shrink-0 flex-col gap-3 border-b border-border px-4 py-4 sm:px-6"
+      }
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Button
@@ -84,15 +92,17 @@ export function DashboardHeader({
           />
         </div>
       </div>
-      <div className="space-y-1">
-        <Breadcrumbs items={breadcrumbs} />
-        <h1 className="font-heading text-2xl font-bold tracking-tight">
-          {resolvedTitle}
-        </h1>
-        {resolvedDescription ? (
-          <p className="text-sm text-muted-foreground">{resolvedDescription}</p>
-        ) : null}
-      </div>
+      {!immersive ? (
+        <div className="space-y-1">
+          <Breadcrumbs items={breadcrumbs} />
+          <h1 className="font-heading text-2xl font-bold tracking-tight">
+            {resolvedTitle}
+          </h1>
+          {resolvedDescription ? (
+            <p className="text-sm text-muted-foreground">{resolvedDescription}</p>
+          ) : null}
+        </div>
+      ) : null}
     </header>
   );
 }

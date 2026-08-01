@@ -1,4 +1,4 @@
-import type { EventStatus, TicketListView } from "@prisma/client";
+import type { DrawOrder, EventStatus, TicketListView } from "@prisma/client";
 import type { TicketDesignPresetDto } from "@/types/ticket-designs";
 
 export type EventDto = {
@@ -15,12 +15,14 @@ export type EventDto = {
   drawScheduledAt: string | null;
   ticketQuantity: number;
   winnerCount: number;
+  drawOrder: DrawOrder;
   ticketDesignId: string | null;
   ticketListViewDefault: TicketListView;
   currencyCode: string | null;
   ticketDesign: TicketDesignPresetDto | null;
   status: EventStatus;
   publishedAt: string | null;
+  drawCompletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

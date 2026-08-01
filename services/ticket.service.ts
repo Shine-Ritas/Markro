@@ -327,6 +327,7 @@ const emptyStatusCounts = (): Record<TicketStatus, number> => ({
   AVAILABLE: 0,
   SOLD: 0,
   VALIDATED: 0,
+  WINNER: 0,
   CANCELLED: 0,
 });
 

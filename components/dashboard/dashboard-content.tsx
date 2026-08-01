@@ -27,6 +27,7 @@ type DashboardContentProps = {
   tenantName?: string;
   upcomingEvents?: EventListItem[];
   totalEvents?: number;
+  totalWinners?: number;
 };
 
 export function DashboardContent({
@@ -36,6 +37,7 @@ export function DashboardContent({
   tenantName,
   upcomingEvents = [],
   totalEvents = 0,
+  totalWinners = 0,
 }: DashboardContentProps) {
   const activeCount = eventStatus.find((s) => s.label === "Published")?.count ?? 0;
   return (
@@ -70,7 +72,7 @@ export function DashboardContent({
           },
           {
             label: "Total Winners",
-            value: "0",
+            value: String(totalWinners),
             subtext: "Lucky draw winners",
             trend: "+5%",
             icon: Trophy,
@@ -147,7 +149,7 @@ export function DashboardContent({
               description="Start a lucky draw session"
               icon={Trophy}
               iconClassName="bg-amber-600"
-              disabled
+              href="/dashboard/events"
             />
             <QuickActionCard
               title="View Tickets"

@@ -1,4 +1,4 @@
-import type { EventStatus, Prisma, TicketListView } from "@prisma/client";
+import type { DrawOrder, EventStatus, Prisma, TicketListView } from "@prisma/client";
 import {
   combineDateAndTime,
   eventWithDesignInclude,
@@ -56,6 +56,7 @@ function mapFormToData(input: EventInput) {
     drawScheduledAt,
     ticketQuantity: input.ticketQuantity,
     winnerCount: input.winnerCount,
+    drawOrder: (input.drawOrder ?? "HIGH_TO_LOW") as DrawOrder,
     ticketDesignId: input.ticketDesignId ?? undefined,
     ticketListViewDefault: (input.ticketListViewDefault ?? "GRID") as TicketListView,
     currencyCode: input.currencyCode,
@@ -99,7 +100,12 @@ export async function getTenantEventById(tenantId: string, eventId: string) {
 
 export async function getTenantEventBySlug(tenantId: string, slug: string) {
   const event = await prisma.event.findFirst({
-    where: { tenantId, slug, deletedAt: null, status: "PUBLISHED" },
+    where: {
+      tenantId,
+      slug,
+      deletedAt: null,
+      status: { in: ["PUBLISHED", "COMPLETED"] },
+    },
     include: { tenant: { select: { name: true, slug: true } } },
   });
   if (!event) return null;
@@ -155,6 +161,9 @@ export async function updateTenantEvent(
     where: { id: eventId, tenantId, deletedAt: null },
   });
   if (!existing) return null;
+  if (existing.status === "COMPLETED") {
+    throw new Error("Completed events cannot be edited");
+  }
 
   const data = mapFormToData(input);
   const slug =
@@ -233,6 +242,9 @@ export async function publishTenantEvent(
     where: { id: eventId, tenantId, deletedAt: null },
   });
   if (!existing) return null;
+  if (existing.status === "COMPLETED") {
+    throw new Error("Completed events cannot be re-published");
+  }
 
   const event = await prisma.event.update({
     where: { id: eventId },

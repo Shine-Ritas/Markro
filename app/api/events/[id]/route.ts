@@ -67,6 +67,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    if (error instanceof Error && error.message) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("[events PATCH]", error);
     return NextResponse.json({ error: "Failed to update event" }, { status: 500 });
   }

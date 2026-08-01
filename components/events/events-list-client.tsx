@@ -21,9 +21,9 @@ type EventsListClientProps = {
 export function EventsListClient({ events, tenantSlug }: EventsListClientProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "DRAFT" | "PUBLISHED" | "ARCHIVED">(
-    "all"
-  );
+  const [filter, setFilter] = useState<
+    "all" | "DRAFT" | "PUBLISHED" | "COMPLETED" | "ARCHIVED"
+  >("all");
 
   const filtered = events.filter((e) => {
     if (filter !== "all" && e.status !== filter) return false;
@@ -76,6 +76,7 @@ export function EventsListClient({ events, tenantSlug }: EventsListClientProps) 
                 ["all", "All"],
                 ["DRAFT", "Draft"],
                 ["PUBLISHED", "Published"],
+                ["COMPLETED", "Completed"],
                 ["ARCHIVED", "Archived"],
               ] as const
             ).map(([key, label]) => (

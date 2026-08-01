@@ -58,6 +58,7 @@ export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   AVAILABLE: "Available",
   SOLD: "Sold",
   VALIDATED: "Validated",
+  WINNER: "Winner",
   CANCELLED: "Cancelled",
 };
 
