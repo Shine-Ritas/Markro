@@ -34,6 +34,7 @@ export type PosSaleDto = {
   customerName: string | null;
   customerPhone: string | null;
   customerEmail: string | null;
+  customerId: string | null;
   quantity: number;
   totalCents: number;
   receiptNumber: string | null;

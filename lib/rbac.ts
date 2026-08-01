@@ -23,6 +23,7 @@ export const PERMISSIONS = {
   TICKETS_WRITE: "tickets.write",
   DRAWS_RUN: "draws.run",
   CUSTOMERS_READ: "customers.read",
+  CUSTOMERS_WRITE: "customers.write",
   ANALYTICS_VIEW: "analytics.view",
   STAFF_MANAGE: "staff.manage",
   SETTINGS_MANAGE: "settings.manage",

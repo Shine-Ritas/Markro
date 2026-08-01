@@ -15,6 +15,7 @@ import {
   getEventPrizeForRank,
   validateEventPrizesForDraw,
 } from "@/services/prize.service";
+import { resolveCustomerIdForTicket } from "@/services/customer.service";
 
 const sessionInclude = {
   winners: {
@@ -231,6 +232,7 @@ async function pickWinnerInTransaction(
   );
   const buyer = await resolveBuyerSnapshot(ticket.id);
   const eventPrize = await getEventPrizeForRank(session.eventId, prizeRank);
+  const customerId = await resolveCustomerIdForTicket(session.tenantId, ticket.id);
 
   const winner = await prisma.$transaction(async (tx) => {
     const fresh = await tx.drawSession.findFirst({
@@ -262,6 +264,7 @@ async function pickWinnerInTransaction(
         rank: nextRank,
         selectionMethod,
         actorId,
+        customerId,
         eventPrizeId: eventPrize?.id ?? null,
         prizeId: eventPrize?.prizeId ?? null,
         prizeName: eventPrize?.prize.name ?? null,

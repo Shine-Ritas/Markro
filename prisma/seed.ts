@@ -7,6 +7,26 @@ async function main() {
   console.log("Seeding database…");
 
   await ensurePermissions();
+
+  const ownerRoles = await prisma.role.findMany({
+    where: { slug: "owner", isSystem: true },
+    select: { id: true },
+  });
+  const allPerms = await prisma.permission.findMany();
+  for (const role of ownerRoles) {
+    const existing = await prisma.rolePermission.findMany({
+      where: { roleId: role.id },
+      select: { permissionId: true },
+    });
+    const existingIds = new Set(existing.map((e) => e.permissionId));
+    const missing = allPerms.filter((p) => !existingIds.has(p.id));
+    if (missing.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: missing.map((p) => ({ roleId: role.id, permissionId: p.id })),
+      });
+    }
+  }
+
   await seedTicketDesignPresets();
 
   const plans = [

@@ -2,6 +2,10 @@ import type { PosSale, PosSaleLine } from "@prisma/client";
 import { createAuditLog } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { resolveCurrentPriceForEvent } from "@/services/ticket.service";
+import {
+  awardLoyaltyPoints,
+  findOrCreateCustomerByPhone,
+} from "@/services/customer.service";
 import type {
   PosDailyStats,
   PosEventFilterOption,
@@ -54,6 +58,7 @@ function toPosSaleDto(sale: SaleWithRelations): PosSaleDto {
     customerName: sale.customerName,
     customerPhone: sale.customerPhone,
     customerEmail: sale.customerEmail,
+    customerId: sale.customerId,
     quantity: sale.quantity,
     totalCents: sale.totalCents,
     receiptNumber: sale.receiptNumber,
@@ -469,6 +474,17 @@ export async function completePosSale(
     return { error: "Customer phone is required" as const };
   }
 
+  const customerResult = await findOrCreateCustomerByPhone(tenantId, {
+    displayName: sale.customerName.trim(),
+    phone: sale.customerPhone.trim(),
+    email: sale.customerEmail,
+    source: "POS",
+    actorId,
+  });
+  if (customerResult.error) {
+    return { error: customerResult.error as string };
+  }
+
   if (sale.lines.length === 0) {
     return { error: "Select at least one ticket number" as const };
   }
@@ -499,6 +515,7 @@ export async function completePosSale(
         receiptNumber,
         actorId,
         completedAt: now,
+        customerId: customerResult.customer.id,
       },
     });
 
@@ -518,6 +535,8 @@ export async function completePosSale(
       })),
     });
   });
+
+  await awardLoyaltyPoints(tenantId, customerResult.customer.id, tickets.length);
 
   await createAuditLog({
     tenantId,

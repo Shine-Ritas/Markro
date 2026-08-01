@@ -29,6 +29,8 @@ model User {
   posSales            PosSale[]
   drawSessions        DrawSession[]
   drawWinners         DrawWinner[]
+  customerProfiles    Customer[]
+  customerNotes       CustomerNote[]
 
   @@index([deletedAt])
   @@map("users")
@@ -418,6 +420,7 @@ model PosSale {
   customerName  String?       @map("customer_name")
   customerPhone String?       @map("customer_phone")
   customerEmail String?       @map("customer_email")
+  customerId    String?       @map("customer_id") @db.Uuid
   quantity      Int           @default(1)
   totalCents    Int           @default(0) @map("total_cents")
   receiptNumber String?       @map("receipt_number")
@@ -426,13 +429,15 @@ model PosSale {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
-  event  Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  actor  User?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
-  lines  PosSaleLine[]
+  event    Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  actor    User?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  lines    PosSaleLine[]
 
   @@index([tenantId, status, createdAt])
   @@index([tenantId, eventId])
   @@index([tenantId, completedAt])
+  @@index([customerId])
   @@map("pos_sales")
 }
 
@@ -556,13 +561,102 @@ model DrawWinner {
   event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   ticket      Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
   eventPrize  EventPrize? @relation(fields: [eventPrizeId], references: [id], onDelete: SetNull)
   prize       Prize?      @relation(fields: [prizeId], references: [id], onDelete: SetNull)
 
   @@unique([drawSessionId, rank])
   @@index([tenantId, eventId])
   @@index([tenantId, selectedAt])
+  @@index([customerId])
   @@map("draw_winners")
+}
+
+// ─── Customers (Phase 8) ────────────────────────────────────────────────────
+
+enum CustomerSource {
+  POS
+  MANUAL
+  IMPORT
+  ONLINE
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  REWARDED
+}
+
+model Customer {
+  id               String         @id @default(uuid()) @db.Uuid
+  tenantId         String         @map("tenant_id") @db.Uuid
+  userId           String?        @map("user_id") @db.Uuid
+  displayName      String         @map("display_name")
+  phone            String
+  email            String?
+  loyaltyPoints    Int            @default(0) @map("loyalty_points")
+  isBlacklisted    Boolean        @default(false) @map("is_blacklisted")
+  blacklistReason  String?        @map("blacklist_reason") @db.Text
+  referralCode     String         @map("referral_code")
+  referredById     String?        @map("referred_by_id") @db.Uuid
+  source           CustomerSource @default(MANUAL)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  deletedAt        DateTime?      @map("deleted_at")
+
+  user              User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  referredBy        Customer?      @relation("CustomerReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referredCustomers Customer[]     @relation("CustomerReferrals")
+  posSales          PosSale[]
+  drawWinners       DrawWinner[]
+  notes             CustomerNote[]
+  referralsSent     Referral[]     @relation("ReferrerCustomer")
+  referralsReceived Referral[]     @relation("ReferredCustomer")
+
+  @@unique([tenantId, phone])
+  @@unique([tenantId, referralCode])
+  @@unique([tenantId, userId])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, isBlacklisted])
+  @@map("customers")
+}
+
+model CustomerNote {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  authorId   String   @map("author_id") @db.Uuid
+  body       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+  @@index([tenantId])
+  @@map("customer_notes")
+}
+
+model Referral {
+  id                  String         @id @default(uuid()) @db.Uuid
+  tenantId            String         @map("tenant_id") @db.Uuid
+  referrerCustomerId  String         @map("referrer_customer_id") @db.Uuid
+  referredCustomerId  String?        @map("referred_customer_id") @db.Uuid
+  referredPhone       String?        @map("referred_phone")
+  eventId             String?        @map("event_id") @db.Uuid
+  status              ReferralStatus @default(PENDING)
+  rewardPoints        Int            @default(0) @map("reward_points")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  referrerCustomer Customer  @relation("ReferrerCustomer", fields: [referrerCustomerId], references: [id], onDelete: Cascade)
+  referredCustomer Customer? @relation("ReferredCustomer", fields: [referredCustomerId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, referrerCustomerId])
+  @@index([tenantId, referredCustomerId])
+  @@index([tenantId, referredPhone])
+  @@map("referrals")
 }
 
 // ─── Audit ──────────────────────────────────────────────────────────────────

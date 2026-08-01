@@ -357,7 +357,16 @@ export function SalesListClient({ initialData, eventOptions }: SalesListClientPr
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p>{sale.customerName ?? "—"}</p>
+                      {sale.customerId ? (
+                        <Link
+                          href={`/dashboard/customers/${sale.customerId}`}
+                          className="font-medium hover:text-primary hover:underline"
+                        >
+                          {sale.customerName ?? "—"}
+                        </Link>
+                      ) : (
+                        <p>{sale.customerName ?? "—"}</p>
+                      )}
                       {sale.customerPhone ? (
                         <p className="text-xs text-muted-foreground">
                           {sale.customerPhone}

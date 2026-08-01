@@ -15,6 +15,7 @@ const ROUTE_LABELS: Record<string, string> = {
   prizes: "Prizes",
   draws: "Lucky Draw",
   winners: "Winners",
+  customers: "Customers",
   pos: "POS",
   reports: "Reports",
   team: "Team",

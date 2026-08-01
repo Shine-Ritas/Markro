@@ -7,6 +7,10 @@ import { Loader2, ShoppingCart, User } from "lucide-react";
 import { toast } from "sonner";
 import { PosReceiptDialog } from "@/components/pos/pos-receipt-dialog";
 import { PosTicketPicker } from "@/components/pos/pos-ticket-picker";
+import {
+  CustomerSearchSelect,
+  type PosCustomerOption,
+} from "@/components/customers/customer-search-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +36,10 @@ export function PosClient({ staffName, initialEvents, initialDrafts }: PosClient
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<PosCustomerOption | null>(
+    null
+  );
+  const [manualCustomer, setManualCustomer] = useState(false);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<PosSaleDto | null>(null);
@@ -51,7 +59,8 @@ export function PosClient({ staffName, initialEvents, initialDrafts }: PosClient
   const canComplete =
     selectedTicketIds.length > 0 &&
     customerName.trim().length > 0 &&
-    customerPhone.trim().length > 0;
+    customerPhone.trim().length > 0 &&
+    !selectedCustomer?.isBlacklisted;
 
   async function refreshData() {
     const [eventsRes, draftsRes] = await Promise.all([
@@ -89,6 +98,18 @@ export function PosClient({ staffName, initialEvents, initialDrafts }: PosClient
     setCustomerName(draft.customerName ?? "");
     setCustomerPhone(draft.customerPhone ?? "");
     setCustomerEmail(draft.customerEmail ?? "");
+    setSelectedCustomer(null);
+    setManualCustomer(Boolean(draft.customerName || draft.customerPhone));
+  }
+
+  function selectCustomer(customer: PosCustomerOption | null) {
+    setSelectedCustomer(customer);
+    if (customer) {
+      setCustomerName(customer.displayName);
+      setCustomerPhone(customer.phone);
+      setCustomerEmail(customer.email ?? "");
+      setManualCustomer(false);
+    }
   }
 
   function resetCart() {
@@ -98,6 +119,8 @@ export function PosClient({ staffName, initialEvents, initialDrafts }: PosClient
     setCustomerName("");
     setCustomerPhone("");
     setCustomerEmail("");
+    setSelectedCustomer(null);
+    setManualCustomer(false);
   }
 
   function selectEvent(eventId: string) {
@@ -169,6 +192,10 @@ export function PosClient({ staffName, initialEvents, initialDrafts }: PosClient
     }
     if (!customerPhone.trim()) {
       toast.error("Customer phone is required");
+      return;
+    }
+    if (selectedCustomer?.isBlacklisted) {
+      toast.error("This customer is blacklisted and cannot purchase tickets");
       return;
     }
 
@@ -401,39 +428,80 @@ export function PosClient({ staffName, initialEvents, initialDrafts }: PosClient
 
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="pos-customer-name">
-                    Customer name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="pos-customer-name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Required"
-                    required
+                  <Label>Customer</Label>
+                  <CustomerSearchSelect
+                    value={selectedCustomer}
+                    onChange={selectCustomer}
+                    onManualChange={() => setManualCustomer(true)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pos-customer-phone">
-                    Phone <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="pos-customer-phone"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="Required"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pos-customer-email">Email</Label>
-                  <Input
-                    id="pos-customer-email"
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="Optional"
-                  />
-                </div>
+
+                {selectedCustomer?.isBlacklisted ? (
+                  <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    This customer is blacklisted and cannot complete a sale.
+                  </p>
+                ) : null}
+
+                {manualCustomer || !selectedCustomer ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="pos-customer-name">
+                        Customer name <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="pos-customer-name"
+                        value={customerName}
+                        onChange={(e) => {
+                          setCustomerName(e.target.value);
+                          setSelectedCustomer(null);
+                        }}
+                        placeholder="Required"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pos-customer-phone">
+                        Phone <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="pos-customer-phone"
+                        value={customerPhone}
+                        onChange={(e) => {
+                          setCustomerPhone(e.target.value);
+                          setSelectedCustomer(null);
+                        }}
+                        placeholder="Required"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pos-customer-email">Email</Label>
+                      <Input
+                        id="pos-customer-email"
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => {
+                          setCustomerEmail(e.target.value);
+                          setSelectedCustomer(null);
+                        }}
+                        placeholder="Optional"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                    <p className="font-medium">{selectedCustomer.displayName}</p>
+                    <p className="text-muted-foreground">{selectedCustomer.phone}</p>
+                    {selectedCustomer.email ? (
+                      <p className="text-muted-foreground">{selectedCustomer.email}</p>
+                    ) : null}
+                    {selectedCustomer.loyaltyPoints > 0 ? (
+                      <p className="mt-1 text-xs text-primary">
+                        {selectedCustomer.loyaltyPoints} loyalty points
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between border-t border-border pt-4 text-lg font-semibold">

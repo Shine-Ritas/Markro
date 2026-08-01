@@ -1,6 +1,10 @@
 import { auth } from "@/auth";
+import { ensurePermissions } from "@/lib/auth-provisioning";
 import { hasPermission, PERMISSIONS } from "@/lib/rbac";
+import { getPrimaryStaffMembership } from "@/lib/tenant";
 import type { Session } from "next-auth";
+
+let permissionsEnsured = false;
 
 export class ApiError extends Error {
   constructor(
@@ -19,6 +23,20 @@ export async function requireApiSession(): Promise<Session> {
   if (!session.user.tenantId) {
     throw new ApiError("No workspace selected", 403);
   }
+
+  if (!permissionsEnsured) {
+    await ensurePermissions();
+    permissionsEnsured = true;
+  }
+
+  if (!session.user.isSuperAdmin) {
+    const membership = await getPrimaryStaffMembership(session.user.id);
+    if (membership && membership.tenantId === session.user.tenantId) {
+      session.user.permissions = membership.permissions;
+      session.user.roleSlug = membership.roleSlug;
+    }
+  }
+
   return session;
 }
 
@@ -48,6 +66,18 @@ export function requireTicketsWrite(session: Session) {
 
 export function requireDrawsRun(session: Session) {
   if (!hasPermission(session, PERMISSIONS.DRAWS_RUN)) {
+    throw new ApiError("Forbidden", 403);
+  }
+}
+
+export function requireCustomersRead(session: Session) {
+  if (!hasPermission(session, PERMISSIONS.CUSTOMERS_READ)) {
+    throw new ApiError("Forbidden", 403);
+  }
+}
+
+export function requireCustomersWrite(session: Session) {
+  if (!hasPermission(session, PERMISSIONS.CUSTOMERS_WRITE)) {
     throw new ApiError("Forbidden", 403);
   }
 }

@@ -51,23 +51,24 @@ Product spec (card designs, list views, social export): **[`ticket-appearance.md
 
 ## Global progress
 
-| Phase | Name                           | Status            |
-| ----- | ------------------------------ | ----------------- |
-| 1     | Project foundation             | `[x]` Done        |
-| 2     | Database & multi-tenant + auth | `[x]` Done        |
-| 3     | Dashboard & layout             | `[x]` Done        |
-| 4     | Event management               | `[x]` Done        |
-| 5     | Ticket management              | `[x]` Done        |
-| 6     | POS system                     | `[x]` Done        |
-| 7     | Lucky draw engine              | `[x]` Done        |
-| 8     | Customer management            | `[ ]` Not started |
-| 9     | Analytics & reporting          | `[ ]` Not started |
-| 10    | Notifications                  | `[ ]` Not started |
-| 11    | Security & audit               | `[ ]` Not started |
-| 12    | Subscription (no payments)     | `[ ]` Not started |
-| 13    | Landing & marketing            | `[ ]` Not started |
-| 14    | Performance                    | `[ ]` Not started |
-| 15    | DevOps & deployment            | `[ ]` Not started |
+| Phase | Name                           | Status                      |
+| ----- | ------------------------------ | --------------------------- |
+| 1     | Project foundation             | `[x]` Done                  |
+| 2     | Database & multi-tenant + auth | `[x]` Done                  |
+| 3     | Dashboard & layout             | `[x]` Done                  |
+| 4     | Event management               | `[x]` Done                  |
+| 5     | Ticket management              | `[x]` Done                  |
+| 6     | POS system                     | `[x]` Done                  |
+| 7     | Lucky draw engine              | `[x]` Done                  |
+| 8     | Customer management            | `[~]` Extension in progress |
+| 9     | Customer account (end user)    | `[ ]` Not started           |
+| 10    | Analytics & reporting          | `[ ]` Not started           |
+| 11    | Notifications                  | `[ ]` Not started           |
+| 12    | Security & audit               | `[ ]` Not started           |
+| 13    | Subscription (no payments)     | `[ ]` Not started           |
+| 14    | Landing & marketing            | `[ ]` Not started           |
+| 15    | Performance                    | `[ ]` Not started           |
+| 16    | DevOps & deployment            | `[ ]` Not started           |
 
 **Legend:** `[ ]` not started · `[~]` in progress · `[x]` done
 
@@ -422,7 +423,7 @@ Functional ticket system with **selectable branded card designs**, **flexible li
 - [x] **Sidebar nav** — add **Sales** item in `app-sidebar.tsx` (between POS and Reports)
 - [x] **POS cross-link** — "View all sales →" on `pos-client.tsx` pointing to `/dashboard/sales`
 
-> **Scope note:** Draft and cancelled sales stay on POS; Phase 9 reports will add charts/CSV export — this page is the **operational transaction list**, not analytics.
+> **Scope note:** Draft and cancelled sales stay on POS; Phase 10 reports will add charts/CSV export — this page is the **operational transaction list**, not analytics.
 
 ### Exit criteria
 
@@ -462,23 +463,145 @@ Complete lucky draw engine.
 
 ### Checklist
 
-- [ ] `customers`, `referrals`, `customer_notes`
-- [ ] Profiles, purchase history, participation, loyalty, blacklist
-- [ ] Customer dashboard + detail + timeline UI
+- [x] `customers`, `referrals`, `customer_notes`
+- [x] Profiles, purchase history, participation, loyalty, blacklist
+- [x] Customer dashboard + detail + timeline UI
 
 ### Exit criteria
 
-- [ ] Customer CRUD linked to tickets/events
+- [x] Customer CRUD linked to tickets/events
 
 ### Deliverable
 
-Customer management module.
+Customer management module (tenant CRM). Base CRM shipped; see **Phase 8 extension** below for global user codes and organizer linking.
+
+### Phase 8 extension — Global user code & organizer linking
+
+**Status:** `[~]` In progress (base CRM done; extension pending)
+
+**Cursor prompt:** `Implement Phase 8 extension (global user code & organizer linking) from @.cursor/planning/plan.md`
+
+#### Identity model
+
+```text
+User (global)                    ← email + globalUserCode e.g. LD-A7K2M9
+  └── Customer (tenant A)        ← CRM profile at Organizer A (userId FK)
+  └── Customer (tenant B)        ← CRM profile at Organizer B (userId FK)
+```
+
+| Field            | Model      | Notes                                                                                                              |
+| ---------------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
+| `globalUserCode` | `User`     | Auto-generated, globally unique, short alphanumeric (e.g. `LD-A7K2M9`). Assigned on user create (register, OAuth). |
+| `userId`         | `Customer` | FK to `User`. Set when organizer links or creates with a global account.                                           |
+
+Not the same as `Customer.referralCode` (per-tenant referral tracking).
+
+#### Code generation rules
+
+- Format: `{PREFIX}-{6-char alphanumeric}` e.g. `LD-A7K2M9`
+- Charset: uppercase A–Z + digits 2–9 (exclude ambiguous 0/O, 1/I/L)
+- Retry on collision (extremely unlikely)
+
+#### Schema
+
+- [ ] Add `User.globalUserCode` (`global_user_code`) — unique, indexed, auto-generated on create
+- [ ] Backfill existing users with codes via migration/script
+- [ ] Expose `globalUserCode` in user DTOs used by search APIs (never expose raw UUID to organizers for lookup)
+
+#### Organizer Customer CRUD — create
+
+- [ ] **Global account search** on create form: type `globalUserCode` **or** email
+- [ ] `GET /api/customers/lookup-global?q=` — returns matching global users (code exact, email partial); requires `customers.write`
+- [ ] If account found → select → pre-fill name/email/phone from `User` + any known profile hints → create `Customer` with `userId` set
+- [ ] If not found → create orphan `Customer` (phone required, `userId` null) as today
+
+#### Organizer Customer CRUD — link existing
+
+- [ ] On customer detail/edit: **Link global account** action for customers where `userId` is null
+- [ ] Same search/select UI (code or email)
+- [ ] `POST /api/customers/[id]/link-user` — set `Customer.userId`; reject if user already linked at this tenant or customer already linked
+- [ ] Show linked `globalUserCode` + email on customer profile when linked
+
+#### POS integration (extend existing)
+
+- [ ] Customer search in POS may optionally search by `globalUserCode` in addition to name/phone
+- [ ] Selecting a linked customer shows global code in summary card
+
+#### Exit criteria (extension)
+
+- [ ] Every `User` has a unique `globalUserCode`
+- [ ] Organizer can create a customer pre-linked by searching code/email
+- [ ] Organizer can link an orphan customer to a global account retroactively
+- [ ] Linked customer shows global code in CRM detail and POS picker
+
+#### Deliverable (extension)
+
+Organizer-facing global account lookup + link, with auto-generated buyer IDs.
 
 ---
 
-# Phase 9 — Analytics & reporting
+# Phase 9 — Customer account (end user)
 
 **Cursor prompt:** `Implement Phase 9 from @.cursor/planning/plan.md`
+
+**Goal:** Let **ticket buyers** create a global user account and see their tickets, purchases, and wins — even when they have bought from **many different event organizers** (tenants).
+
+### Identity model
+
+```text
+User (global)                    ← email + globalUserCode e.g. LD-A7K2M9
+  └── Customer (tenant A)        ← CRM profile at Organizer A
+  └── Customer (tenant B)        ← CRM profile at Organizer B
+  └── Staff (tenant A)           ← optional; same person can be staff AND customer
+```
+
+- **Phase 8** created tenant-scoped `Customer` rows (phone dedup per tenant).
+- **Phase 8 extension** lets organizers link customers to global accounts via `globalUserCode` or email in CRM/POS.
+- **Phase 9** adds buyer self-service: login, claim by verification, and cross-organizer portal.
+- A buyer may appear as **multiple `Customer` records** (one per organizer); the portal aggregates them under one account.
+- Staff dashboard auth (`Staff` + RBAC) stays separate from the buyer portal.
+
+### Checklist — auth & linking
+
+- [ ] Buyer registration + login (email/password + Google OAuth; reuse Auth.js `User` table; assign `globalUserCode` on create)
+- [ ] Dedicated routes: `/account` (portal), `/account/login`, `/account/register` (or route group `(customer)`)
+- [ ] **Buyer-initiated claim / link** flow: verify phone (SMS stub OK) or email to attach orphan `Customer` rows where `userId` is null (organizer may have already linked via Phase 8 extension)
+- [ ] On POS sale complete: if phone matches a logged-in buyer `User`, set `Customer.userId` automatically
+- [ ] On buyer sign-up: offer to claim orphan `Customer` rows by verified phone/email (skip rows already linked by organizer)
+- [ ] Prevent linking a `Customer` already owned by another `User`
+- [ ] Buyer profile displays `globalUserCode` (shareable ID across organizers)
+
+### Checklist — buyer portal UI
+
+- [ ] **My account** home — profile, linked organizers count
+- [ ] **My tickets** — all tickets across organizers (event name, org name, ticket number, status)
+- [ ] **My purchases** — POS receipts grouped by organizer
+- [ ] **My wins** — draw results with prize name, event, organizer
+- [ ] Per-organizer filter or tabs when buyer has history at multiple tenants
+- [ ] Mobile-responsive layout (buyers mostly on phone)
+
+### Checklist — API
+
+- [ ] `GET /api/me` — buyer profile + linked customer profile IDs
+- [ ] `GET /api/me/tickets`, `/api/me/purchases`, `/api/me/wins` — cross-tenant aggregation (scoped to `userId`)
+- [ ] `POST /api/me/link-phone` (or email) — verify and link orphan `Customer` rows
+- [ ] Middleware: buyer routes require session **without** `Staff` membership (or allow both with role detection)
+
+### Exit criteria
+
+- [ ] Buyer registers once and sees tickets/wins from **two or more organizers** after linking
+- [ ] New POS purchase auto-links to logged-in buyer when phone matches
+- [ ] Staff dashboard and buyer portal do not conflict for users who are both
+
+### Deliverable
+
+End-user customer account portal with multi-organizer ticket & winner history.
+
+---
+
+# Phase 10 — Analytics & reporting
+
+**Cursor prompt:** `Implement Phase 10 from @.cursor/planning/plan.md`
 
 ### Checklist
 
@@ -496,9 +619,9 @@ Analytics dashboard.
 
 ---
 
-# Phase 10 — Notifications
+# Phase 11 — Notifications
 
-**Cursor prompt:** `Implement Phase 10 from @.cursor/planning/plan.md`
+**Cursor prompt:** `Implement Phase 11 from @.cursor/planning/plan.md`
 
 ### Checklist
 
@@ -517,9 +640,9 @@ Internal notification system.
 
 ---
 
-# Phase 11 — Security & audit
+# Phase 12 — Security & audit
 
-**Cursor prompt:** `Implement Phase 11 from @.cursor/planning/plan.md`
+**Cursor prompt:** `Implement Phase 12 from @.cursor/planning/plan.md`
 
 ### Checklist
 
@@ -538,9 +661,9 @@ Hardened SaaS security layer.
 
 ---
 
-# Phase 12 — Subscription (no payments)
+# Phase 13 — Subscription (no payments)
 
-**Cursor prompt:** `Implement Phase 12 from @.cursor/planning/plan.md — no payment gateway`
+**Cursor prompt:** `Implement Phase 13 from @.cursor/planning/plan.md — no payment gateway`
 
 ### Checklist
 
@@ -558,9 +681,9 @@ Subscription architecture without payment integration.
 
 ---
 
-# Phase 13 — Landing & marketing
+# Phase 14 — Landing & marketing
 
-**Cursor prompt:** `Implement Phase 13 from @.cursor/planning/plan.md`
+**Cursor prompt:** `Implement Phase 14 from @.cursor/planning/plan.md`
 
 ### Checklist
 
@@ -579,9 +702,9 @@ Marketing website.
 
 ---
 
-# Phase 14 — Performance
+# Phase 15 — Performance
 
-**Cursor prompt:** `Implement Phase 14 from @.cursor/planning/plan.md`
+**Cursor prompt:** `Implement Phase 15 from @.cursor/planning/plan.md`
 
 ### Checklist
 
@@ -599,9 +722,9 @@ Optimized platform baseline.
 
 ---
 
-# Phase 15 — DevOps & deployment
+# Phase 16 — DevOps & deployment
 
-**Cursor prompt:** `Implement Phase 15 from @.cursor/planning/plan.md`
+**Cursor prompt:** `Implement Phase 16 from @.cursor/planning/plan.md`
 
 ### Checklist
 
@@ -643,8 +766,10 @@ Requirements: beautiful, fast, scalable, mobile-responsive, multi-tenant, produc
 
 ## Changelog (plan updates)
 
-| Date       | Change                                                                                       |
-| ---------- | -------------------------------------------------------------------------------------------- |
-| 2026-05-20 | Ticket appearance spec → `ticket-appearance.md`; dedicated appearance page                   |
-| 2026-05-20 | Ticket card designs (per event), card view modes, Take photo / social export — Phase 4+5     |
-| 2026-05-20 | Restructured for Cursor phases; added Google OAuth; checklists; `bug_report.md` + `other.md` |
+| Date       | Change                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------- |
+| 2026-08-01 | Phase 8 extension: `User.globalUserCode` (LD-XXXXXX), organizer search/link by code or email in Customer CRUD |
+| 2026-08-01 | Phase 8 done; new Phase 9 Customer account (multi-organizer buyer portal); phases 9–15 → 10–16                |
+| 2026-05-20 | Ticket appearance spec → `ticket-appearance.md`; dedicated appearance page                                    |
+| 2026-05-20 | Ticket card designs (per event), card view modes, Take photo / social export — Phase 4+5                      |
+| 2026-05-20 | Restructured for Cursor phases; added Google OAuth; checklists; `bug_report.md` + `other.md`                  |

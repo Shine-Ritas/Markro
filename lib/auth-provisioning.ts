@@ -10,6 +10,7 @@ const OWNER_PERMISSIONS = [
   "tickets.write",
   "draws.run",
   "customers.read",
+  "customers.write",
   "analytics.view",
   "staff.manage",
   "settings.manage",
@@ -26,6 +27,31 @@ export async function ensurePermissions() {
       },
       update: {},
     });
+  }
+  await syncOwnerRolePermissions();
+}
+
+export async function syncOwnerRolePermissions() {
+  const ownerRoles = await prisma.role.findMany({
+    where: { slug: "owner", isSystem: true },
+    select: { id: true },
+  });
+  const allPerms = await prisma.permission.findMany({
+    where: { slug: { in: OWNER_PERMISSIONS } },
+  });
+
+  for (const role of ownerRoles) {
+    const existing = await prisma.rolePermission.findMany({
+      where: { roleId: role.id },
+      select: { permissionId: true },
+    });
+    const existingIds = new Set(existing.map((e) => e.permissionId));
+    const missing = allPerms.filter((p) => !existingIds.has(p.id));
+    if (missing.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: missing.map((p) => ({ roleId: role.id, permissionId: p.id })),
+      });
+    }
   }
 }
 

@@ -15,6 +15,7 @@ import {
   Ticket,
   Trophy,
   Users,
+  UserCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ const mainNav: NavItem[] = [
 const toolsNav: NavItem[] = [
   { label: "POS", href: "/dashboard/pos", icon: ShoppingCart },
   { label: "Sales", href: "/dashboard/sales", icon: Receipt },
+  { label: "Customers", href: "/dashboard/customers", icon: UserCircle },
   { label: "Reports", href: "/dashboard/reports", icon: BarChart3, disabled: true },
   { label: "Team", href: "/dashboard/team", icon: Users, disabled: true },
   { label: "Settings", href: "/dashboard/settings", icon: Settings, disabled: true },
