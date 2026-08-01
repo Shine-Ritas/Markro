@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { Customer, CustomerNote, Prisma, Referral } from "@prisma/client";
+import { isGlobalUserCodeQuery } from "@/lib/global-user-code";
 import { createAuditLog } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import type {
@@ -11,6 +12,7 @@ import type {
   CustomerParticipationDto,
   CustomerPurchaseDto,
   CustomerTimelineEvent,
+  GlobalUserLookupResult,
   ReferralDto,
 } from "@/types/customers";
 import type {
@@ -29,7 +31,14 @@ function generateReferralCode(): string {
   return randomBytes(4).toString("hex").toUpperCase();
 }
 
-function toCustomerDto(customer: Customer): CustomerDto {
+function toCustomerDto(
+  customer: Customer,
+  linkedUser?: {
+    globalUserCode: string | null;
+    email: string;
+    phone: string | null;
+  } | null
+): CustomerDto {
   return {
     id: customer.id,
     tenantId: customer.tenantId,
@@ -45,6 +54,9 @@ function toCustomerDto(customer: Customer): CustomerDto {
     source: customer.source,
     createdAt: customer.createdAt.toISOString(),
     updatedAt: customer.updatedAt.toISOString(),
+    globalUserCode: linkedUser?.globalUserCode ?? null,
+    linkedUserEmail: linkedUser?.email ?? null,
+    linkedUserPhone: linkedUser?.phone ?? null,
   };
 }
 
@@ -95,6 +107,19 @@ export async function listTenantCustomers(
             { phone: { contains: q, mode: "insensitive" } },
             { email: { contains: q, mode: "insensitive" } },
             { referralCode: { contains: q, mode: "insensitive" } },
+            ...(isGlobalUserCodeQuery(q)
+              ? [
+                  {
+                    user: {
+                      globalUserCode: {
+                        equals: q.toUpperCase().startsWith("LD-")
+                          ? q.toUpperCase()
+                          : `LD-${q.replace(/^LD-?/i, "").toUpperCase()}`,
+                      },
+                    },
+                  },
+                ]
+              : []),
           ],
         }
       : {}),
@@ -114,6 +139,11 @@ export async function listTenantCustomers(
       orderBy: [{ updatedAt: "desc" }],
       take: limit,
       skip: offset,
+      include: {
+        user: {
+          select: { globalUserCode: true, email: true, phone: true },
+        },
+      },
     }),
     prisma.customer.count({ where }),
   ]);
@@ -121,7 +151,10 @@ export async function listTenantCustomers(
   const items: CustomerListItem[] = await Promise.all(
     customers.map(async (customer) => {
       const stats = await getCustomerStats(tenantId, customer.id);
-      return { ...toCustomerDto(customer), ...stats };
+      return {
+        ...toCustomerDto(customer, customer.user),
+        ...stats,
+      };
     })
   );
 
@@ -136,13 +169,14 @@ export async function getTenantCustomerById(
     where: { id: customerId, tenantId, deletedAt: null },
     include: {
       referredBy: { select: { displayName: true } },
+      user: { select: { globalUserCode: true, email: true, phone: true } },
     },
   });
   if (!customer) return null;
 
   const stats = await getCustomerStats(tenantId, customerId);
   return {
-    ...toCustomerDto(customer),
+    ...toCustomerDto(customer, customer.user),
     ...stats,
     referredByName: customer.referredBy?.displayName ?? null,
   };
@@ -161,17 +195,33 @@ export async function createTenantCustomer(
     return { error: "A customer with this phone already exists" as const };
   }
 
+  if (input.userId) {
+    const userLinkConflict = await prisma.customer.findFirst({
+      where: { tenantId, userId: input.userId, deletedAt: null },
+    });
+    if (userLinkConflict) {
+      return {
+        error:
+          "This global account is already linked to a customer at this organization" as const,
+      };
+    }
+  }
+
   const referralCode = await uniqueReferralCode(tenantId);
 
   const customer = await prisma.customer.create({
     data: {
       tenantId,
+      userId: input.userId ?? null,
       displayName: input.displayName.trim(),
       phone,
       email: input.email?.trim() || null,
       referredById: input.referredById ?? null,
       source: input.source ?? "MANUAL",
       referralCode,
+    },
+    include: {
+      user: { select: { globalUserCode: true, email: true, phone: true } },
     },
   });
 
@@ -181,10 +231,10 @@ export async function createTenantCustomer(
     action: "customer.created",
     entity: "customer",
     entityId: customer.id,
-    metadata: { phone, source: customer.source },
+    metadata: { phone, source: customer.source, userId: customer.userId },
   });
 
-  return { customer: toCustomerDto(customer) };
+  return { customer: toCustomerDto(customer, customer.user) };
 }
 
 export async function updateTenantCustomer(
@@ -805,4 +855,115 @@ export async function isCustomerBlacklistedByPhone(
     select: { isBlacklisted: true },
   });
   return customer?.isBlacklisted ?? false;
+}
+
+export async function lookupGlobalUsers(q: string): Promise<GlobalUserLookupResult[]> {
+  const trimmed = q.trim();
+  if (!trimmed) return [];
+
+  const isCode = isGlobalUserCodeQuery(trimmed);
+  if (isCode) {
+    const normalized = trimmed.toUpperCase().startsWith("LD-")
+      ? trimmed.toUpperCase()
+      : `LD-${trimmed.replace(/^LD-?/i, "").toUpperCase()}`;
+
+    const user = await prisma.user.findFirst({
+      where: { globalUserCode: normalized, deletedAt: null },
+      select: {
+        id: true,
+        globalUserCode: true,
+        email: true,
+        name: true,
+        phone: true,
+      },
+    });
+    if (!user?.globalUserCode) return [];
+    return [
+      {
+        id: user.id,
+        globalUserCode: user.globalUserCode,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+      },
+    ];
+  }
+
+  if (trimmed.length < 3) return [];
+
+  const users = await prisma.user.findMany({
+    where: {
+      deletedAt: null,
+      email: { contains: trimmed.toLowerCase(), mode: "insensitive" },
+      globalUserCode: { not: null },
+    },
+    select: {
+      id: true,
+      globalUserCode: true,
+      email: true,
+      name: true,
+      phone: true,
+    },
+    take: 10,
+    orderBy: { email: "asc" },
+  });
+
+  return users
+    .filter((u) => u.globalUserCode)
+    .map((u) => ({
+      id: u.id,
+      globalUserCode: u.globalUserCode!,
+      email: u.email,
+      name: u.name,
+      phone: u.phone,
+    }));
+}
+
+export async function linkCustomerToUser(
+  tenantId: string,
+  customerId: string,
+  userId: string,
+  actorId: string
+) {
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, tenantId, deletedAt: null },
+  });
+  if (!customer) return { error: "Customer not found" as const };
+  if (customer.userId)
+    return { error: "Customer is already linked to a global account" as const };
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+    select: { id: true, globalUserCode: true, email: true, phone: true },
+  });
+  if (!user) return { error: "Global account not found" as const };
+
+  const existingLink = await prisma.customer.findFirst({
+    where: { tenantId, userId, deletedAt: null, NOT: { id: customerId } },
+  });
+  if (existingLink) {
+    return {
+      error:
+        "This global account is already linked to another customer at this organization" as const,
+    };
+  }
+
+  const updated = await prisma.customer.update({
+    where: { id: customerId },
+    data: { userId },
+    include: {
+      user: { select: { globalUserCode: true, email: true, phone: true } },
+    },
+  });
+
+  await createAuditLog({
+    tenantId,
+    actorId,
+    action: "customer.linked_user",
+    entity: "customer",
+    entityId: customerId,
+    metadata: { userId, globalUserCode: user.globalUserCode },
+  });
+
+  return { customer: toCustomerDto(updated, updated.user) };
 }

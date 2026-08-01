@@ -37,6 +37,8 @@ import type {
   ReferralDto,
 } from "@/types/customers";
 import { CUSTOMER_SOURCE_LABELS, REFERRAL_STATUS_LABELS } from "@/types/customers";
+import type { GlobalUserLookupResult } from "@/types/customers";
+import { GlobalUserSearch } from "@/components/customers/global-user-search";
 
 type CustomerDetailClientProps = {
   initialCustomer: CustomerDetailDto;
@@ -67,6 +69,7 @@ export function CustomerDetailClient({ initialCustomer }: CustomerDetailClientPr
   const [timeline, setTimeline] = useState<CustomerTimelineEvent[]>([]);
   const [referralPhone, setReferralPhone] = useState("");
   const [loadingTab, setLoadingTab] = useState(false);
+  const [linking, setLinking] = useState(false);
 
   const loadTabData = useCallback(async () => {
     setLoadingTab(true);
@@ -170,6 +173,27 @@ export function CustomerDetailClient({ initialCustomer }: CustomerDetailClientPr
     loadTabData();
   }
 
+  async function handleLinkUser(user: GlobalUserLookupResult) {
+    setLinking(true);
+    try {
+      const res = await fetch(`/api/customers/${customer.id}/link-user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to link account");
+        return;
+      }
+      setCustomer((c) => ({ ...c, ...json.customer }));
+      toast.success("Global account linked");
+      router.refresh();
+    } finally {
+      setLinking(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-start sm:justify-between">
@@ -193,6 +217,18 @@ export function CustomerDetailClient({ initialCustomer }: CustomerDetailClientPr
               Referral code: <code className="font-mono">{customer.referralCode}</code>{" "}
               · {CUSTOMER_SOURCE_LABELS[customer.source]}
             </p>
+            {customer.globalUserCode ? (
+              <p className="mt-1 text-xs">
+                <Badge variant="secondary" className="font-mono">
+                  {customer.globalUserCode}
+                </Badge>
+                {customer.linkedUserEmail ? (
+                  <span className="ml-2 text-muted-foreground">
+                    {customer.linkedUserEmail}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 text-center sm:gap-6">
@@ -260,6 +296,29 @@ export function CustomerDetailClient({ initialCustomer }: CustomerDetailClientPr
               Save profile
             </Button>
           </section>
+
+          {!customer.userId ? (
+            <section className="rounded-xl border border-border bg-card p-5">
+              <h3 className="font-heading font-semibold">Link global account</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Connect this customer to a buyer&apos;s global account by code or email.
+              </p>
+              <div className="mt-4">
+                <GlobalUserSearch
+                  selected={null}
+                  onSelect={(user) => {
+                    if (user) void handleLinkUser(user);
+                  }}
+                  label="Search global account"
+                />
+                {linking ? (
+                  <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" /> Linking…
+                  </p>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           <section className="rounded-xl border border-border bg-card p-5">
             <h3 className="font-heading font-semibold">Blacklist</h3>

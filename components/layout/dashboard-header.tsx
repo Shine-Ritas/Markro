@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, Ticket } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { NotificationDropdown } from "@/components/layout/notification-dropdown";
 import { TenantSwitcher } from "@/components/layout/tenant-switcher";
@@ -82,6 +83,15 @@ export function DashboardHeader({
           <TenantSwitcher tenants={tenants} activeTenantId={activeTenantId} />
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:inline-flex"
+            render={<Link href="/account" />}
+          >
+            <Ticket className="size-4" />
+            My tickets
+          </Button>
           <NotificationDropdown activities={activities} />
           <UserMenu
             name={user.name}

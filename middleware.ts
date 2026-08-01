@@ -11,34 +11,51 @@ const publicPaths = [
   "/forgot-password",
   "/reset-password",
   "/design-system",
+  "/account/login",
+  "/account/register",
 ];
 
 function isPublicPath(pathname: string) {
   if (publicPaths.includes(pathname)) return true;
   if (pathname.startsWith("/api/auth")) return true;
+  if (pathname.startsWith("/api/")) return true;
   if (pathname.startsWith("/org/")) return true;
   return false;
 }
 
-function isAuthPath(pathname: string) {
+function isStaffAuthPath(pathname: string) {
   return ["/login", "/register", "/forgot-password", "/reset-password"].includes(
     pathname
   );
+}
+
+function isBuyerAuthPath(pathname: string) {
+  return ["/account/login", "/account/register"].includes(pathname);
 }
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth?.user?.id;
   const isPublic = isPublicPath(pathname);
+  const hasTenant = Boolean(req.auth?.user?.tenantId);
 
   if (!isLoggedIn && !isPublic) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
+    const loginUrl = new URL(
+      pathname.startsWith("/account") ? "/account/login" : "/login",
+      req.nextUrl.origin
+    );
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isLoggedIn && isAuthPath(pathname)) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+  if (isLoggedIn && isStaffAuthPath(pathname)) {
+    return NextResponse.redirect(
+      new URL(hasTenant ? "/dashboard" : "/account", req.nextUrl.origin)
+    );
+  }
+
+  if (isLoggedIn && isBuyerAuthPath(pathname)) {
+    return NextResponse.redirect(new URL("/account", req.nextUrl.origin));
   }
 
   const response = NextResponse.next();

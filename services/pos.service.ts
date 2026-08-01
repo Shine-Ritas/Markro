@@ -6,6 +6,7 @@ import {
   awardLoyaltyPoints,
   findOrCreateCustomerByPhone,
 } from "@/services/customer.service";
+import { autoLinkCustomerOnPos } from "@/services/buyer.service";
 import type {
   PosDailyStats,
   PosEventFilterOption,
@@ -537,6 +538,12 @@ export async function completePosSale(
   });
 
   await awardLoyaltyPoints(tenantId, customerResult.customer.id, tickets.length);
+
+  await autoLinkCustomerOnPos(
+    tenantId,
+    customerResult.customer.id,
+    sale.customerPhone.trim()
+  );
 
   await createAuditLog({
     tenantId,

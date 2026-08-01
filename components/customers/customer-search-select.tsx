@@ -21,6 +21,7 @@ export type PosCustomerOption = {
   email: string | null;
   isBlacklisted: boolean;
   loyaltyPoints: number;
+  globalUserCode?: string | null;
 };
 
 type CustomerSearchSelectProps = {
@@ -35,7 +36,7 @@ export function CustomerSearchSelect({
   value,
   onChange,
   onManualChange,
-  placeholder = "Search customer by name or phone…",
+  placeholder = "Search by name, phone, or LD-XXXXXX…",
   className,
 }: CustomerSearchSelectProps) {
   const [open, setOpen] = useState(false);
@@ -93,7 +94,9 @@ export function CustomerSearchSelect({
         }
       >
         <span className="truncate">
-          {value ? `${value.displayName} · ${value.phone}` : placeholder}
+          {value
+            ? `${value.displayName} · ${value.phone}${value.globalUserCode ? ` · ${value.globalUserCode}` : ""}`
+            : placeholder}
         </span>
         <ChevronDown className="size-4 shrink-0 opacity-50" />
       </DropdownMenuTrigger>
@@ -104,7 +107,7 @@ export function CustomerSearchSelect({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Name or phone…"
+              placeholder="Name, phone, or LD-XXXXXX…"
               className="h-8 pl-8"
               onKeyDown={(e) => e.stopPropagation()}
               autoFocus
@@ -133,7 +136,12 @@ export function CustomerSearchSelect({
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="truncate font-medium">{customer.displayName}</p>
+                    <p className="truncate font-medium">
+                      {customer.displayName}{" "}
+                      {customer.globalUserCode
+                        ? "( " + customer.globalUserCode + " )"
+                        : ""}{" "}
+                    </p>
                     {customer.isBlacklisted ? (
                       <Badge variant="destructive" className="text-[10px]">
                         Blacklisted
@@ -141,6 +149,7 @@ export function CustomerSearchSelect({
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">{customer.phone}</p>
+
                   {customer.email ? (
                     <p className="truncate text-xs text-muted-foreground">
                       {customer.email}

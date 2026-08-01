@@ -15,6 +15,17 @@ export type CustomerDto = {
   source: CustomerSource;
   createdAt: string;
   updatedAt: string;
+  globalUserCode: string | null;
+  linkedUserEmail: string | null;
+  linkedUserPhone: string | null;
+};
+
+export type GlobalUserLookupResult = {
+  id: string;
+  globalUserCode: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
 };
 
 export type CustomerListItem = CustomerDto & {

@@ -25,6 +25,7 @@ export async function GET(request: Request) {
         email: c.email,
         isBlacklisted: c.isBlacklisted,
         loyaltyPoints: c.loyaltyPoints,
+        globalUserCode: c.globalUserCode,
       })),
     });
   } catch (error) {

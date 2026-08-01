@@ -14,6 +14,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  if (!session.user.tenantId && !session.user.isSuperAdmin) {
+    redirect("/account");
+  }
+
   const { user } = session;
 
   const [tenants, activities] = await Promise.all([

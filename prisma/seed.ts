@@ -106,12 +106,15 @@ async function main() {
   let demoUser = await prisma.user.findUnique({ where: { email: demoEmail } });
 
   if (!demoUser) {
+    const { generateUniqueGlobalUserCode } = await import("@/lib/global-user-code");
+    const globalUserCode = await generateUniqueGlobalUserCode();
     demoUser = await prisma.user.create({
       data: {
         email: demoEmail,
         name: "Demo Owner",
         passwordHash: await hashPassword(demoPassword),
         emailVerified: new Date(),
+        globalUserCode,
       },
     });
   } else {
@@ -119,6 +122,10 @@ async function main() {
       where: { id: demoUser.id },
       data: { passwordHash: await hashPassword(demoPassword) },
     });
+    if (!demoUser.globalUserCode) {
+      const { assignGlobalUserCode } = await import("@/lib/global-user-code");
+      await assignGlobalUserCode(demoUser.id);
+    }
   }
 
   let demoTenant = await prisma.tenant.findUnique({ where: { slug: "demo-org" } });

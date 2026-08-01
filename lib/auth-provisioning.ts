@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { hashPassword } from "@/lib/password";
 import { createAuditLog, uniqueTenantSlug } from "@/lib/tenant";
+import { generateUniqueGlobalUserCode } from "@/lib/global-user-code";
+import { hashPassword } from "@/lib/password";
 
 const OWNER_PERMISSIONS = [
   "tenant.manage",
@@ -101,15 +102,20 @@ export async function createOrganizationWithOwner(input: {
     let userId = input.userId;
 
     if (!userId) {
+      const globalUserCode = await generateUniqueGlobalUserCode();
       const user = await tx.user.create({
         data: {
           email: input.email.toLowerCase(),
           name: input.name ?? input.organizationName,
           passwordHash: input.password ? await hashPassword(input.password) : null,
           emailVerified: new Date(),
+          globalUserCode,
         },
       });
       userId = user.id;
+    } else {
+      const { assignGlobalUserCode } = await import("@/lib/global-user-code");
+      await assignGlobalUserCode(userId);
     }
 
     await tx.staff.create({

@@ -8,6 +8,11 @@ export const customerFormSchema = z.object({
   email: z.string().email("Invalid email").optional().nullable().or(z.literal("")),
   referredById: z.string().uuid().optional().nullable(),
   source: customerSourceSchema.optional(),
+  userId: z.string().uuid().optional().nullable(),
+});
+
+export const linkCustomerUserSchema = z.object({
+  userId: z.string().uuid(),
 });
 
 export const customerListQuerySchema = z.object({

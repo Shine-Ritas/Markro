@@ -81,3 +81,11 @@ export function requireCustomersWrite(session: Session) {
     throw new ApiError("Forbidden", 403);
   }
 }
+
+export async function requireBuyerSession(): Promise<Session> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new ApiError("Unauthorized", 401);
+  }
+  return session;
+}

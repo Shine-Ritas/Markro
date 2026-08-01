@@ -8,12 +8,14 @@ type GoogleSignInButtonProps = {
   label?: string;
   callbackUrl?: string;
   mode?: "signin" | "signup";
+  intent?: "buyer" | "staff";
 };
 
 export function GoogleSignInButton({
   label = "Continue with Google",
   callbackUrl = "/dashboard",
   mode = "signin",
+  intent = "staff",
 }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
   const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
@@ -21,6 +23,7 @@ export function GoogleSignInButton({
   async function handleClick() {
     setLoading(true);
     try {
+      document.cookie = `auth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
       await signIn("google", { callbackUrl });
     } catch {
       setLoading(false);

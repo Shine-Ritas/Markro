@@ -26,7 +26,9 @@ import {
   CUSTOMER_SOURCE_LABELS,
   type CustomerListItem,
   type CustomerListResult,
+  type GlobalUserLookupResult,
 } from "@/types/customers";
+import { GlobalUserSearch } from "@/components/customers/global-user-search";
 
 type CustomersListClientProps = {
   initialData: CustomerListResult;
@@ -48,6 +50,7 @@ export function CustomersListClient({ initialData }: CustomersListClientProps) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [linkedUser, setLinkedUser] = useState<GlobalUserLookupResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
 
@@ -83,6 +86,7 @@ export function CustomersListClient({ initialData }: CustomersListClientProps) {
           phone: form.phone,
           email: form.email || null,
           source: "MANUAL",
+          userId: linkedUser?.id ?? null,
         }),
       });
       const json = await res.json();
@@ -97,6 +101,7 @@ export function CustomersListClient({ initialData }: CustomersListClientProps) {
       toast.success("Customer created");
       setOpen(false);
       setForm(emptyForm);
+      setLinkedUser(null);
       fetchCustomers({ q: appliedQuery, blacklisted: blacklistedOnly });
     } finally {
       setSaving(false);
@@ -219,6 +224,20 @@ export function CustomersListClient({ initialData }: CustomersListClientProps) {
             <DialogTitle>Add customer</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <GlobalUserSearch
+              selected={linkedUser}
+              onSelect={(user) => {
+                setLinkedUser(user);
+                if (user) {
+                  setForm((f) => ({
+                    ...f,
+                    displayName: user.name ?? f.displayName,
+                    email: user.email,
+                    phone: user.phone ?? f.phone,
+                  }));
+                }
+              }}
+            />
             <div className="space-y-2">
               <Label htmlFor="customer-name">Name</Label>
               <Input

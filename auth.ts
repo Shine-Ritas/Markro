@@ -2,11 +2,14 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { authConfig } from "@/auth.config";
 import { provisionOAuthUser } from "@/lib/auth-provisioning";
+import { assignGlobalUserCode } from "@/lib/global-user-code";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { claimCustomersByEmail } from "@/services/buyer.service";
 import { getPrimaryStaffMembership } from "@/lib/tenant";
 
 const credentialsSchema = z.object({
@@ -94,7 +97,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account }) {
       if (!user.email) return false;
 
+      if (user.id) {
+        await assignGlobalUserCode(user.id);
+      }
+
       if (account?.provider === "google") {
+        const cookieStore = await cookies();
+        const intent = cookieStore.get("auth_intent")?.value ?? "staff";
+
+        if (intent === "buyer") {
+          if (user.id) await claimCustomersByEmail(user.id);
+          return true;
+        }
+
         const staffCount = await prisma.staff.count({
           where: { userId: user.id!, deletedAt: null },
         });
@@ -105,6 +120,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
           });
         }
+      }
+
+      if (user.id && account?.provider === "credentials") {
+        await claimCustomersByEmail(user.id);
       }
 
       return true;
@@ -121,6 +140,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
+    async createUser({ user }) {
+      if (user.id) {
+        await assignGlobalUserCode(user.id);
+      }
+    },
     async signIn({ user, account }) {
       if (user.id && account?.provider) {
         await prisma.auditLog.create({
