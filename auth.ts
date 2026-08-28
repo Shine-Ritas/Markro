@@ -32,6 +32,24 @@ async function enrichToken(userId: string) {
 
   const membership = await getPrimaryStaffMembership(userId);
 
+  let tenantId = membership?.tenantId;
+  let tenantSlug = membership?.tenantSlug;
+  let tenantName = membership?.tenantName;
+
+  // Platform super admins may have no Staff row; default to the first active org.
+  if (!tenantId && dbUser.isSuperAdmin) {
+    const fallbackTenant = await prisma.tenant.findFirst({
+      where: { deletedAt: null, status: "ACTIVE" },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, slug: true, name: true },
+    });
+    if (fallbackTenant) {
+      tenantId = fallbackTenant.id;
+      tenantSlug = fallbackTenant.slug;
+      tenantName = fallbackTenant.name;
+    }
+  }
+
   const accounts = await prisma.account.findMany({
     where: { userId },
     select: { provider: true },
@@ -46,9 +64,9 @@ async function enrichToken(userId: string) {
   return {
     sub: userId,
     isSuperAdmin: dbUser.isSuperAdmin,
-    tenantId: membership?.tenantId,
-    tenantSlug: membership?.tenantSlug,
-    tenantName: membership?.tenantName,
+    tenantId,
+    tenantSlug,
+    tenantName,
     roleSlug: membership?.roleSlug ?? (dbUser.isSuperAdmin ? "super_admin" : undefined),
     permissions: membership?.permissions ?? (dbUser.isSuperAdmin ? ["*"] : []),
     authProviders: Array.from(providers),

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { hashPassword } from "../lib/password";
 import { ensurePermissions } from "../lib/auth-provisioning";
 import { prisma } from "../lib/prisma";
@@ -84,7 +85,7 @@ async function main() {
   const superEmail = "superadmin@luckdraw.app";
   const superPassword = "SuperAdmin123!";
 
-  await prisma.user.upsert({
+  const superUser = await prisma.user.upsert({
     where: { email: superEmail },
     create: {
       email: superEmail,
@@ -172,6 +173,19 @@ async function main() {
     update: { roleId: ownerRole.id, status: "ACTIVE" },
   });
 
+  await prisma.staff.upsert({
+    where: {
+      tenantId_userId: { tenantId: demoTenant.id, userId: superUser.id },
+    },
+    create: {
+      tenantId: demoTenant.id,
+      userId: superUser.id,
+      roleId: ownerRole.id,
+      status: "ACTIVE",
+    },
+    update: { roleId: ownerRole.id, status: "ACTIVE" },
+  });
+
   const existingSub = await prisma.subscription.findFirst({
     where: { tenantId: demoTenant.id },
   });
@@ -186,7 +200,7 @@ async function main() {
   }
 
   console.log("\nSeed complete.\n");
-  console.log("Super Admin:", superEmail, "/", superPassword);
+  console.log("Super Admin:", superEmail, "/", superPassword, "(workspace: demo-org)");
   console.log("Demo User:   ", demoEmail, "/", demoPassword);
   console.log("Demo Tenant: ", demoTenant.slug);
   console.log(

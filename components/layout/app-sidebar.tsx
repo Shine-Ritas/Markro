@@ -6,6 +6,7 @@ import {
   BarChart3,
   Calendar,
   ChevronLeft,
+  ChevronRight,
   Gift,
   LayoutDashboard,
   Receipt,
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
+import { APP_NAME, APP_TAGLINE, shellTopBarClassName } from "@/lib/constants";
 
 const STORAGE_KEY = "luckdraw-sidebar-collapsed";
 
@@ -132,8 +133,9 @@ export function AppSidebar({
     >
       <div
         className={cn(
-          "flex shrink-0 items-center border-b border-sidebar-border",
-          isCollapsed ? "justify-center px-2 py-4" : "gap-3 px-4 py-5"
+          shellTopBarClassName,
+          "border-sidebar-border",
+          isCollapsed ? "justify-center px-2" : "gap-3 px-4"
         )}
       >
         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary">
@@ -191,40 +193,58 @@ export function AppSidebar({
       <div
         className={cn(
           "shrink-0 border-t border-sidebar-border bg-sidebar",
-          isCollapsed ? "p-2" : "p-3"
+          isCollapsed ? "flex flex-col items-stretch gap-1 p-2" : "p-3"
         )}
       >
-        <button
-          type="button"
-          onClick={toggleCollapsed}
+        {!forceExpanded && isCollapsed ? (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className={cn(
+              "flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-sm transition-colors",
+              "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+            )}
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <ChevronRight className="size-5 shrink-0" />
+          </button>
+        ) : null}
+
+        <div
           className={cn(
-            "flex w-full rounded-lg text-sm transition-colors hover:bg-sidebar-accent/60",
-            isCollapsed
-              ? "flex-col items-center gap-1 p-2"
-              : "items-center gap-3 px-2 py-2 text-left"
+            "flex items-center",
+            isCollapsed ? "justify-center py-1" : "gap-3 px-1 py-0.5"
           )}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={isCollapsed ? displayName : undefined}
         >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/80 text-xs font-semibold text-primary-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
             {initial}
           </div>
           {!isCollapsed ? (
-            <>
-              <div className="min-w-0 flex-1 overflow-hidden">
-                <p className="truncate font-medium text-sidebar-foreground">
-                  {displayName}
-                </p>
-                <p className="truncate text-xs text-sidebar-foreground/50">
-                  {userEmail ?? ""}
-                </p>
-              </div>
-              <ChevronLeft className="size-4 shrink-0 text-sidebar-foreground/50" />
-            </>
-          ) : (
-            <ChevronLeft className="size-4 shrink-0 rotate-180 text-sidebar-foreground/50" />
-          )}
-        </button>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <p className="truncate text-sm font-medium text-sidebar-foreground">
+                {displayName}
+              </p>
+              {userEmail ? (
+                <p className="truncate text-xs text-sidebar-foreground/50">{userEmail}</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {!forceExpanded && !isCollapsed ? (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+          >
+            <ChevronLeft className="size-5 shrink-0" />
+            <span>Collapse</span>
+          </button>
+        ) : null}
       </div>
     </aside>
   );

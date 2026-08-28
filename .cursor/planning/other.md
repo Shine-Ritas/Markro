@@ -66,6 +66,69 @@
 | Login         | `/login`                | Email + Google OAuth                           |
 | Dashboard     | `/dashboard`            | Protected; tenant + RBAC context               |
 
+### Prisma / database commands
+
+This project uses **Prisma 7** with PostgreSQL. Schema: `prisma/schema.prisma`. Config: `prisma.config.ts` (`DATABASE_URL`). Client is generated to `generated/prisma`. Migrations live in `prisma/migrations/`. Seed: `prisma/seed.ts`.
+
+Requires `.env` with `DATABASE_URL` and Postgres running (`npm run docker:up`).
+
+#### Everyday npm scripts
+
+| Command                 | Prisma equivalent        | Description                                                                                          |
+| ----------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `npm run docker:up`     | —                        | Start local PostgreSQL (`luckdraw` / `luckdraw` on port 5432).                                       |
+| `npm run docker:down`   | —                        | Stop the Postgres container (data volume is kept).                                                   |
+| `npm run db:generate`   | `npx prisma generate`    | Regenerate the Prisma Client from the schema. Also runs automatically on `npm install` (postinstall). |
+| `npm run db:migrate`    | `npx prisma migrate dev` | **Preferred.** Create a migration from schema changes and apply it to the local DB. Prompts for a name. |
+| `npm run db:push`       | `npx prisma db push`     | Push schema to the DB **without** writing a migration file. Use only for throwaway local experiments. |
+| `npm run db:seed`       | `npx prisma db seed`     | Run `prisma/seed.ts` (permissions, plans, ticket design presets). Safe to re-run.                    |
+
+#### First-time local setup
+
+```bash
+cp .env.example .env          # ensure DATABASE_URL is set
+npm run docker:up             # Postgres on localhost:5432
+npm run db:migrate            # apply existing migrations
+npm run db:seed               # demo/catalog data
+```
+
+If the database is empty and migrations already exist, `db:migrate` applies them. If you only need the schema without migration history locally, `db:push` then `db:seed` also works — do not use `db:push` as the team workflow.
+
+#### After you change `prisma/schema.prisma`
+
+```bash
+npm run db:migrate            # creates prisma/migrations/<timestamp>_<name>/
+npm run db:generate           # usually already done by migrate; run if types are stale
+```
+
+Commit both `prisma/schema.prisma` and the new folder under `prisma/migrations/`.
+
+#### Other useful Prisma CLI
+
+| Command                          | Description                                                                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `npx prisma migrate deploy`      | Apply pending migrations with **no** prompts. Use in production / CI / Docker.                       |
+| `npx prisma migrate status`      | Show which migrations are applied vs pending.                                                        |
+| `npx prisma migrate reset`       | **Destructive.** Drop the DB, re-apply all migrations, then seed. Local only.                        |
+| `npx prisma migrate diff`        | Diff two schemas (or schema vs database) without applying anything.                                  |
+| `npx prisma db pull`             | Introspect the live database into `schema.prisma`. Overwrites the file — use with care.              |
+| `npx prisma validate`            | Check `schema.prisma` + `prisma.config.ts` for errors.                                               |
+| `npx prisma format`              | Format `schema.prisma`.                                                                              |
+| `npx prisma studio`              | Open a browser UI to browse/edit rows at [http://localhost:5555](http://localhost:5555).             |
+
+#### What to use when
+
+| Situation                                      | Command                    |
+| ---------------------------------------------- | -------------------------- |
+| Clone the repo, empty local Postgres           | `docker:up` → `db:migrate` → `db:seed` |
+| Edit models/enums/indexes in the schema        | `db:migrate`               |
+| Refresh ticket designs / plans / permissions   | `db:seed`                  |
+| Types missing after a pull (`generated/prisma`) | `db:generate`             |
+| Deploy to a real environment                   | `npx prisma migrate deploy` |
+| Wipe local data and start over                 | `npx prisma migrate reset` |
+
+Do **not** run `npm audit fix --force` or `prisma migrate reset` against a shared/production database.
+
 ---
 
 ## Architecture decisions

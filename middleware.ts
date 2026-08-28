@@ -38,6 +38,8 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth?.user?.id;
   const isPublic = isPublicPath(pathname);
   const hasTenant = Boolean(req.auth?.user?.tenantId);
+  const isSuperAdmin = Boolean(req.auth?.user?.isSuperAdmin);
+  const canUseDashboard = hasTenant || isSuperAdmin;
 
   if (!isLoggedIn && !isPublic) {
     const loginUrl = new URL(
@@ -50,7 +52,7 @@ export default auth((req) => {
 
   if (isLoggedIn && isStaffAuthPath(pathname)) {
     return NextResponse.redirect(
-      new URL(hasTenant ? "/dashboard" : "/account", req.nextUrl.origin)
+      new URL(canUseDashboard ? "/dashboard" : "/account", req.nextUrl.origin)
     );
   }
 

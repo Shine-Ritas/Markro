@@ -1,35 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Menu, Ticket } from "lucide-react";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { NotificationDropdown } from "@/components/layout/notification-dropdown";
 import { TenantSwitcher } from "@/components/layout/tenant-switcher";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Button } from "@/components/ui/button";
-import { getBreadcrumbs } from "@/lib/breadcrumbs";
 import type { ActivityItem, TenantOption } from "@/lib/dashboard";
-import { isDrawSessionRoute } from "@/lib/dashboard-routes";
-
-const PAGE_DESCRIPTIONS: Record<string, string> = {
-  "/dashboard": "Welcome back! Here's what's happening with your events.",
-  "/dashboard/events": "Create and manage lucky draw events for your organization.",
-  "/dashboard/tickets": "View and validate tickets across all events.",
-  "/dashboard/pos": "Sell tickets at the counter — tablet-friendly POS checkout.",
-  "/dashboard/events/new": "Set up a new event with schedule, tickets, and rules.",
-};
-
-function appearancePageDescription(pathname: string): string | undefined {
-  if (/\/dashboard\/events\/[^/]+\/appearance$/.test(pathname)) {
-    return "Choose a ticket card design and default list layout for this event.";
-  }
-  return undefined;
-}
+import { shellTopBarClassName } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export type DashboardHeaderProps = {
-  title?: string;
-  description?: string;
   tenants: TenantOption[];
   activeTenantId?: string;
   activities: ActivityItem[];
@@ -44,75 +25,60 @@ export type DashboardHeaderProps = {
 };
 
 export function DashboardHeader({
-  title,
-  description,
   tenants,
   activeTenantId,
   activities,
   user,
   onMenuClick,
 }: DashboardHeaderProps) {
-  const pathname = usePathname();
-  const immersive = isDrawSessionRoute(pathname);
-  const breadcrumbs = getBreadcrumbs(pathname);
-  const resolvedTitle =
-    title ?? breadcrumbs[breadcrumbs.length - 1]?.label ?? "Dashboard";
-  const resolvedDescription =
-    description ?? appearancePageDescription(pathname) ?? PAGE_DESCRIPTIONS[pathname];
-
   return (
     <header
-      className={
-        immersive
-          ? "flex shrink-0 border-b border-border px-4 py-2 sm:px-6"
-          : "flex shrink-0 flex-col gap-3 border-b border-border px-4 py-4 sm:px-6"
-      }
+      className={cn(
+        shellTopBarClassName,
+        "sticky top-0 z-20 justify-between gap-3 border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-6"
+      )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="lg:hidden"
-            onClick={onMenuClick}
-            aria-label="Open menu"
-          >
-            <Menu className="size-5" />
-          </Button>
-          <TenantSwitcher tenants={tenants} activeTenantId={activeTenantId} />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden sm:inline-flex"
-            render={<Link href="/account" />}
-          >
-            <Ticket className="size-4" />
-            My tickets
-          </Button>
-          <NotificationDropdown activities={activities} />
-          <UserMenu
-            name={user.name}
-            email={user.email}
-            roleSlug={user.roleSlug}
-            authProviders={user.authProviders}
-            image={user.image}
-          />
-        </div>
+      <div className="flex min-w-0 items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+        >
+          <Menu className="size-5" />
+        </Button>
+        <TenantSwitcher tenants={tenants} activeTenantId={activeTenantId} />
       </div>
-      {!immersive ? (
-        <div className="space-y-1">
-          <Breadcrumbs items={breadcrumbs} />
-          <h1 className="font-heading text-2xl font-bold tracking-tight">
-            {resolvedTitle}
-          </h1>
-          {resolvedDescription ? (
-            <p className="text-sm text-muted-foreground">{resolvedDescription}</p>
-          ) : null}
-        </div>
-      ) : null}
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hidden gap-2 sm:inline-flex"
+          render={<Link href="/account" />}
+        >
+          <Ticket className="size-4" />
+          My tickets
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="sm:hidden"
+          render={<Link href="/account" aria-label="My tickets" />}
+        >
+          <Ticket className="size-4" />
+        </Button>
+        <NotificationDropdown activities={activities} />
+        <UserMenu
+          name={user.name}
+          email={user.email}
+          roleSlug={user.roleSlug}
+          authProviders={user.authProviders}
+          image={user.image}
+        />
+      </div>
     </header>
   );
 }
