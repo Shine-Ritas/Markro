@@ -7,7 +7,7 @@ import { TenantSwitcher } from "@/components/layout/tenant-switcher";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Button } from "@/components/ui/button";
 import type { ActivityItem, TenantOption } from "@/lib/dashboard";
-import { shellTopBarClassName } from "@/lib/constants";
+import { shellTopBarClassName, shellToolbarButtonClass } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export type DashboardHeaderProps = {
@@ -35,15 +35,15 @@ export function DashboardHeader({
     <header
       className={cn(
         shellTopBarClassName,
-        "sticky top-0 z-20 justify-between gap-3 border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-6"
+        "sticky top-0 z-20 justify-between gap-3 px-4 sm:px-6"
       )}
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-1">
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="lg:hidden"
+          className="size-8 lg:hidden"
           onClick={onMenuClick}
           aria-label="Open menu"
         >
@@ -56,7 +56,7 @@ export function DashboardHeader({
         <Button
           variant="ghost"
           size="sm"
-          className="hidden gap-2 sm:inline-flex"
+          className={cn(shellToolbarButtonClass, "hidden sm:inline-flex")}
           render={<Link href="/account" />}
         >
           <Ticket className="size-4" />
@@ -65,19 +65,24 @@ export function DashboardHeader({
         <Button
           variant="ghost"
           size="icon"
-          className="sm:hidden"
+          className="size-8 sm:hidden"
           render={<Link href="/account" aria-label="My tickets" />}
         >
           <Ticket className="size-4" />
         </Button>
-        <NotificationDropdown activities={activities} />
-        <UserMenu
-          name={user.name}
-          email={user.email}
-          roleSlug={user.roleSlug}
-          authProviders={user.authProviders}
-          image={user.image}
-        />
+        <div
+          className="ml-1 flex items-center gap-1 border-l border-border pl-2"
+          aria-label="Account actions"
+        >
+          <NotificationDropdown activities={activities} />
+          <UserMenu
+            name={user.name}
+            email={user.email}
+            roleSlug={user.roleSlug}
+            authProviders={user.authProviders}
+            image={user.image}
+          />
+        </div>
       </div>
     </header>
   );

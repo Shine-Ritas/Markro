@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { TenantOption } from "@/lib/dashboard";
 import { formatRoleLabel } from "@/lib/dashboard-page-meta";
+import { shellToolbarButtonClass } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type TenantSwitcherProps = {
@@ -24,10 +25,15 @@ export function TenantSwitcher({ tenants, activeTenantId }: TenantSwitcherProps)
 
   if (!active) {
     return (
-      <div className="flex max-w-[220px] items-center gap-2 rounded-lg border border-dashed border-border/80 px-2.5 py-1.5 text-sm text-muted-foreground">
-        <Building2 className="size-4 shrink-0 opacity-60" />
+      <span
+        className={cn(
+          shellToolbarButtonClass,
+          "inline-flex max-w-[200px] items-center gap-2 text-sm text-muted-foreground"
+        )}
+      >
+        <Building2 className="size-4 shrink-0 opacity-50" />
         <span className="truncate">No workspace</span>
-      </div>
+      </span>
     );
   }
 
@@ -38,24 +44,12 @@ export function TenantSwitcher({ tenants, activeTenantId }: TenantSwitcherProps)
           <Button
             variant="ghost"
             size="sm"
-            className={cn(
-              "h-auto max-w-[240px] gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5",
-              "hover:bg-muted/50 hover:text-foreground"
-            )}
+            className={cn(shellToolbarButtonClass, "max-w-[200px] font-medium")}
           />
         }
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
-          <Building2 className="size-3.5" />
-        </span>
-        <span className="min-w-0 text-left">
-          <span className="block truncate text-sm font-medium leading-tight">
-            {active.name}
-          </span>
-          <span className="block truncate text-[10px] capitalize text-muted-foreground">
-            {formatRoleLabel(active.roleSlug) ?? "Workspace"}
-          </span>
-        </span>
+        <Building2 className="size-4 shrink-0 text-primary" />
+        <span className="truncate">{active.name}</span>
         <ChevronsUpDown className="size-3.5 shrink-0 opacity-40" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-60">

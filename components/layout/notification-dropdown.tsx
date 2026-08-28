@@ -3,6 +3,8 @@
 import { Bell } from "lucide-react";
 import { formatActionLabel, timeAgo } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { shellToolbarButtonClass } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +26,13 @@ export function NotificationDropdown({ activities }: NotificationDropdownProps) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="icon" className="relative shrink-0" />}
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(shellToolbarButtonClass, "relative size-8 shrink-0")}
+          />
+        }
       >
         <Bell className="size-4" />
         {count > 0 ? (

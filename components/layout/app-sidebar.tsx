@@ -51,13 +51,18 @@ const toolsNav: NavItem[] = [
 
 function navItemClass(collapsed: boolean, isActive: boolean, disabled?: boolean) {
   return cn(
-    "flex items-center rounded-lg text-sm transition-colors",
-    collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2",
+    "flex items-center text-sm transition-colors",
+    collapsed
+      ? "justify-center rounded-lg px-2 py-2.5"
+      : cn(
+          "gap-3 rounded-r-lg border-l-2 py-2 pr-3",
+          isActive ? "border-l-primary pl-[10px]" : "border-l-transparent pl-3"
+        ),
     disabled
       ? "cursor-not-allowed text-sidebar-foreground/40"
       : isActive
-        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+        ? "bg-primary/10 font-medium text-sidebar-foreground"
+        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
   );
 }
 
@@ -134,19 +139,18 @@ export function AppSidebar({
       <div
         className={cn(
           shellTopBarClassName,
-          "border-sidebar-border",
-          isCollapsed ? "justify-center px-2" : "gap-3 px-4"
+          isCollapsed ? "justify-center gap-0 px-2" : "gap-2.5 px-4"
         )}
       >
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary">
-          <Sparkles className="size-5 text-primary-foreground" />
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary">
+          <Sparkles className="size-4 text-primary-foreground" />
         </div>
         {!isCollapsed ? (
-          <div className="min-w-0 overflow-hidden">
+          <div className="min-w-0 overflow-hidden leading-tight">
             <p className="truncate font-heading text-sm font-semibold text-sidebar-foreground">
               {APP_NAME}
             </p>
-            <p className="truncate text-xs text-sidebar-foreground/60">{APP_TAGLINE}</p>
+            <p className="truncate text-[10px] text-sidebar-foreground/55">{APP_TAGLINE}</p>
           </div>
         ) : null}
       </div>
@@ -160,7 +164,7 @@ export function AppSidebar({
         <div className="space-y-6">
           <div>
             {!isCollapsed ? (
-              <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
+              <p className="mb-1.5 px-3 text-[10px] font-semibold tracking-widest text-sidebar-foreground/40 uppercase">
                 Main
               </p>
             ) : null}
@@ -177,7 +181,7 @@ export function AppSidebar({
 
           <div>
             {!isCollapsed ? (
-              <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
+              <p className="mb-1.5 px-3 text-[10px] font-semibold tracking-widest text-sidebar-foreground/40 uppercase">
                 Tools
               </p>
             ) : null}

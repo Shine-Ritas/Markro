@@ -3,6 +3,8 @@
 import { signOut } from "next-auth/react";
 import { KeyRound, LogOut, Mail, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { shellToolbarButtonClass } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -59,13 +61,15 @@ export function UserMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="gap-2 pl-1.5" />}
+        render={
+          <Button variant="ghost" size="sm" className={cn(shellToolbarButtonClass, "pl-1.5")} />
+        }
       >
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" className="size-7 rounded-full object-cover" />
+          <img src={image} alt="" className="size-6 rounded-full object-cover" />
         ) : (
-          <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+          <span className="flex size-6 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
             {initial}
           </span>
         )}
